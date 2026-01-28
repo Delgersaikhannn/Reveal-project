@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approval Guard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 320px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #ffffff;
+      color: #1f2937;
+    }
+    .header {
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .status {
+      padding: 12px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .status-item:last-child {
+      margin-bottom: 0;
+    }
+    .indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .indicator.green {
+      background: #10b981;
+    }
+    .indicator.gray {
+      background: #9ca3af;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    .btn-primary:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .address {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin: 12px 0;
+    }
+    .info {
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🛡️ Approval Guard</h1>
+    <p class="subtitle">Multichain Approval Manager</p>
+  </div>
+
+  <div class="status">
+    <div class="status-item">
+      <div class="indicator" id="walletIndicator"></div>
+      <span id="walletStatus">Checking wallet...</span>
+    </div>
+    <div class="status-item" id="addressRow" style="display: none;">
+      <span class="address" id="walletAddress"></span>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="scanButton">
+    Scan Approvals
+  </button>
+
+  <div class="divider"></div>
+
+  <div class="info">
+    This extension detects wallet interactions.<br>
+    All approvals are scanned and managed in the web app.
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
