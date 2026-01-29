@@ -8,4 +8,5 @@ export interface TokenApproval {
   approvalAmount: string;
   isUnlimited: boolean;
   riskLevel: "low" | "medium" | "high" | "critical";
+  lastUpdated?: string; // ISO timestamp
 }

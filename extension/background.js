@@ -119,7 +119,8 @@ function handleApprovalDetected(message, tabId) {
 
   // Check if user has Privacy Passport
   const state = tabStates.get(tabId);
-  const hasValidPassport = state?.hasPassport && state?.privacyPassport?.verified;
+  const hasValidPassport =
+    state?.hasPassport && state?.privacyPassport?.verified;
 
   // Set badge based on risk + passport status
   let badgeState;
@@ -132,26 +133,32 @@ function handleApprovalDetected(message, tabId) {
     notificationMessage = hasValidPassport
       ? `Unlimited ${tokenType} approval detected on ${domain}. Consider generating updated Privacy Passport.`
       : `Unlimited ${tokenType} approval on ${domain} to unverified contract. Generate a Privacy Passport to prove wallet safety.`;
-    
-    showNotification({ title: notificationTitle, message: notificationMessage });
+
+    showNotification({
+      title: notificationTitle,
+      message: notificationMessage,
+    });
   } else if (riskLevel === "HIGH") {
     badgeState = BADGE_STATES.RISK;
     notificationTitle = "⚠️ High Risk Approval";
     notificationMessage = hasValidPassport
       ? `Unlimited ${tokenType} approval on ${domain}`
       : `Generate a Privacy Passport to prove your wallet hygiene without revealing addresses.`;
-    
-    showNotification({ title: notificationTitle, message: notificationMessage });
+
+    showNotification({
+      title: notificationTitle,
+      message: notificationMessage,
+    });
   } else if (riskLevel === "MEDIUM") {
     badgeState = BADGE_STATES.APPROVAL;
-  } elseif (state.hasPassport) {
-          setBadge(tabId, BADGE_STATES.PASSPORT);
-        } else {
-          setBadge(
-            tabId,
-            state.walletDetected ? BADGE_STATES.DETECTED : BADGE_STATES.NONE,
-          );
-        }
+  } else if (state?.hasPassport) {
+    badgeState = BADGE_STATES.PASSPORT;
+  } else {
+    badgeState = state?.walletDetected
+      ? BADGE_STATES.DETECTED
+      : BADGE_STATES.NONE;
+  }
+
   setBadge(tabId, badgeState);
 
   // Clear badge after 5 minutes
@@ -291,15 +298,14 @@ async function checkPrivacyPassport(tabId, address) {
     const walletHash = simpleHash(address.toLowerCase());
 
     // Check local storage for passport
-    chrome.storage.local.get(['privacy_passports'], (result) => {
+    chrome.storage.local.get(["privacy_passports"], (result) => {
       const passports = result.privacy_passports || [];
-      
-      const valid = passports.find(p => 
-        p.walletHash === walletHash &&
-        Date.now() <= p.expiresAt
+
+      const valid = passports.find(
+        (p) => p.walletHash === walletHash && Date.now() <= p.expiresAt,
       );
 
-      updateTabState(tabId, { 
+      updateTabState(tabId, {
         privacyPassport: valid || null,
         hasPassport: !!valid,
       });
@@ -308,7 +314,10 @@ async function checkPrivacyPassport(tabId, address) {
       if (valid && valid.verified) {
         const state = getTabState(tabId);
         // Only show passport badge if no active alerts
-        if (!state.lastApprovalTime || Date.now() - state.lastApprovalTime > 5 * 60 * 1000) {
+        if (
+          !state.lastApprovalTime ||
+          Date.now() - state.lastApprovalTime > 5 * 60 * 1000
+        ) {
           setBadge(tabId, BADGE_STATES.PASSPORT);
         }
       }
@@ -326,12 +335,12 @@ function simpleHash(data) {
   return `0x${Array.from(data)
     .reduce((hash, char) => {
       const chr = char.charCodeAt(0);
-      hash = ((hash << 5) - hash) + chr;
+      hash = (hash << 5) - hash + chr;
       hash |= 0;
       return hash;
     }, 0)
     .toString(16)
-    .padStart(64, '0')}`;
+    .padStart(64, "0")}`;
 }
 
 // Cleanup on tab close

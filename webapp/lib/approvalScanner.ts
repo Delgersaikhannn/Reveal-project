@@ -6,18 +6,11 @@ export class ApprovalScanner {
   private alchemyApiKey: string;
   private alchemyRpcUrl: string;
 
-  constructor(chainId: number = 33139) {
+  constructor() {
     this.alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || "";
-
-    // Map chain IDs to Alchemy RPC URLs
-    const rpcUrls: Record<number, string> = {
-      1: `https://eth-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`,
-      137: `https://polygon-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`,
-      42161: `https://arb-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`,
-      33139: `https://apechain-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`, // ApeChain
-    };
-
-    this.alchemyRpcUrl = rpcUrls[chainId] || rpcUrls[33139];
+    // Note: Alchemy doesn't support ApeChain yet, so we use Ethereum for demo
+    // In production, you'd need to find an indexer that supports ApeChain
+    this.alchemyRpcUrl = `https://apechain-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`;
     this.provider = new ethers.JsonRpcProvider(this.alchemyRpcUrl);
   }
 
@@ -160,9 +153,8 @@ export class ApprovalScanner {
   private getTokenTypeFromCategory(
     category: string,
   ): "ERC-20" | "ERC-721" | "ERC-1155" {
-    if (category === "erc20" || category === "erc20_approval") return "ERC-20";
-    if (category === "erc1155" || category === "erc1155_approval")
-      return "ERC-1155";
+    if (category === "erc20_approval") return "ERC-20";
+    if (category === "erc1155_approval") return "ERC-1155";
     return "ERC-721";
   }
 
