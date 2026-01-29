@@ -6,27 +6,21 @@ export class ApprovalScanner {
   private alchemyApiKey: string;
   private alchemyRpcUrl: string;
 
-  constructor(chainId: number = 33139) {
+  constructor() {
     this.alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || "";
-
-    // Map chain IDs to Alchemy RPC URLs
-    const rpcUrls: Record<number, string> = {
-      1: `https://eth-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`,
-      137: `https://polygon-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`,
-      42161: `https://arb-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`,
-      33139: `https://apechain-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`, // ApeChain
-    };
-
-    this.alchemyRpcUrl = rpcUrls[chainId] || rpcUrls[33139];
+    // Note: Alchemy doesn't support ApeChain yet, so we use Ethereum for demo
+    // In production, you'd need to find an indexer that supports ApeChain
+    this.alchemyRpcUrl = `https://apechain-mainnet.g.alchemy.com/v2/${this.alchemyApiKey}`;
     this.provider = new ethers.JsonRpcProvider(this.alchemyRpcUrl);
   }
 
   async scanWallet(walletAddress: string): Promise<TokenApproval[]> {
     try {
-      console.log(`Scanning approvals for ${walletAddress}...`);
+      const approvals: TokenApproval[] = [];
 
-      // Fetch approval events using eth_getLogs
-      const approvals = await this.fetchApprovalEvents(walletAddress);
+      // Scan token/NFT approvals via Alchemy transfers API (supports approvals)
+      const transferApprovals = await this.scanApprovals(walletAddress);
+      approvals.push(...transferApprovals);
 
       console.log(`Found ${approvals.length} active approvals`);
       return approvals;
@@ -36,206 +30,94 @@ export class ApprovalScanner {
     }
   }
 
-  private async fetchApprovalEvents(
-    walletAddress: string,
-  ): Promise<TokenApproval[]> {
+  private async scanApprovals(walletAddress: string): Promise<TokenApproval[]> {
     const approvals: TokenApproval[] = [];
 
-    // ERC20 Approval event signature
-    // event Approval(address indexed owner, address indexed spender, uint256 value)
-    const ERC20_APPROVAL_TOPIC =
-      "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925";
+    // Alchemy supports approval events via getAssetTransfers with approval categories
+    // Categories: erc20_approval, erc721_approval, erc1155_approval
+    let pageKey: string | undefined;
+    let pages = 0;
+    const maxPages = 5; // safety cap
 
-    // ERC721 ApprovalForAll event signature
-    // event ApprovalForAll(address indexed owner, address indexed operator, bool approved)
-    const ERC721_APPROVAL_FOR_ALL_TOPIC =
-      "0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31";
+    do {
+      const body = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "alchemy_getAssetTransfers",
+        params: [
+          {
+            fromAddress: walletAddress,
+            category: ["erc20", "erc721", "erc1155"],
+            withMetadata: false,
+            maxCount: "0x64", // 100 per page
+            pageKey,
+          },
+        ],
+      };
 
-    // Convert address to topic format (pad to 32 bytes)
-    const addressTopic = `0x${walletAddress.slice(2).padStart(64, "0")}`;
+      const response = await fetch(this.alchemyRpcUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-    try {
-      // Fetch ERC20 Approval events
-      const erc20Logs = await this.provider.send("eth_getLogs", [
-        {
-          fromBlock: "0x0", // From genesis
-          toBlock: "latest",
-          topics: [
-            ERC20_APPROVAL_TOPIC, // event signature
-            addressTopic, // owner (indexed parameter 1)
-          ],
-        },
-      ]);
+      const data = await response.json();
 
-      console.log(`Found ${erc20Logs.length} ERC20 approval events`);
-
-      // Fetch ERC721 ApprovalForAll events
-      const erc721Logs = await this.provider.send("eth_getLogs", [
-        {
-          fromBlock: "0x0",
-          toBlock: "latest",
-          topics: [
-            ERC721_APPROVAL_FOR_ALL_TOPIC,
-            addressTopic, // owner
-          ],
-        },
-      ]);
-
-      console.log(`Found ${erc721Logs.length} ERC721 ApprovalForAll events`);
-
-      // Process ERC20 approvals - check current allowance on-chain
-      const uniqueApprovals = new Map<string, any>();
-
-      for (const log of erc20Logs) {
-        const tokenAddress = log.address;
-        // Spender is the 2nd indexed parameter
-        const spender = `0x${log.topics[2].slice(26)}`;
-
-        const key = `${tokenAddress}-${spender}`;
-
-        // Keep only the most recent approval per token-spender pair
-        if (!uniqueApprovals.has(key)) {
-          uniqueApprovals.set(key, { log, tokenAddress, spender });
-        }
+      if (data.error) {
+        console.error("Alchemy approvals API error:", data.error);
+        break;
       }
 
-      console.log(
-        `Processing ${uniqueApprovals.size} unique token-spender pairs...`,
-      );
+      const transfers = data.result?.transfers || [];
 
-      // Check current on-chain allowances
-      for (const { tokenAddress, spender, log } of uniqueApprovals.values()) {
+      for (const tx of transfers) {
+        const tokenAddress = tx.rawContract?.address;
+        const spender = tx.to || tx.rawContract?.to || tx.toAddress;
+        if (!tokenAddress || !spender) continue;
+
+        const tokenType = this.getTokenTypeFromCategory(tx.category);
+
         try {
-          // Query current allowance
-          const allowance = await this.getCurrentAllowance(
-            tokenAddress,
-            walletAddress,
-            spender,
-          );
-
-          // Skip if allowance is 0
-          if (allowance === 0n) continue;
-
           const metadata = await this.getTokenMetadata(tokenAddress);
-          const decimals = metadata.decimals || 18;
-          const formattedAmount = ethers.formatUnits(allowance, decimals);
 
-          const maxUint256 = BigInt(
-            "115792089237316195423570985008687907853269984665640564039457584007913129639935",
-          );
-          const isUnlimited = allowance >= maxUint256 / 2n;
+          let formattedAmount = "All";
+          let isUnlimited = true;
+
+          if (tokenType === "ERC-20" && tx.rawContract?.value) {
+            const valueBN = BigInt(tx.rawContract.value);
+            const decimals = metadata.decimals || 18;
+            formattedAmount = ethers.formatUnits(valueBN, decimals);
+
+            const maxUint256 = BigInt(
+              "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            );
+            isUnlimited = valueBN >= maxUint256 / 2n;
+          }
 
           approvals.push({
             tokenAddress,
             tokenName: metadata.name || "Unknown Token",
-            tokenSymbol: metadata.symbol || "???",
-            tokenType: "ERC-20",
+            tokenSymbol:
+              metadata.symbol || (tokenType === "ERC-20" ? "???" : "NFT"),
+            tokenType,
             spenderAddress: spender,
             spenderName: this.getSpenderName(spender),
-            approvalAmount: isUnlimited ? "Unlimited" : formattedAmount,
+            approvalAmount:
+              tokenType === "ERC-20" ? formattedAmount : "All NFTs",
             isUnlimited,
             riskLevel: this.calculateRiskLevel(isUnlimited, spender),
-            lastUpdated: new Date(
-              Number(ethers.getBigInt(log.blockNumber) * 12n) * 1000,
-            ).toISOString(), // Approximate timestamp
           });
         } catch (error) {
-          console.error(`Error checking allowance for ${tokenAddress}:`, error);
+          console.error("Error processing approval transfer:", error);
           continue;
         }
       }
 
-      // Process ERC721 ApprovalForAll
-      const uniqueNftApprovals = new Map<string, any>();
-
-      for (const log of erc721Logs) {
-        const tokenAddress = log.address;
-        const operator = `0x${log.topics[2].slice(26)}`;
-        const key = `${tokenAddress}-${operator}`;
-
-        if (!uniqueNftApprovals.has(key)) {
-          uniqueNftApprovals.set(key, { log, tokenAddress, operator });
-        }
-      }
-
-      for (const {
-        tokenAddress,
-        operator,
-        log,
-      } of uniqueNftApprovals.values()) {
-        try {
-          // Check if still approved
-          const isApproved = await this.isApprovedForAll(
-            tokenAddress,
-            walletAddress,
-            operator,
-          );
-
-          if (!isApproved) continue;
-
-          const metadata = await this.getTokenMetadata(tokenAddress);
-
-          approvals.push({
-            tokenAddress,
-            tokenName: metadata.name || "Unknown NFT",
-            tokenSymbol: metadata.symbol || "NFT",
-            tokenType: "ERC-721",
-            spenderAddress: operator,
-            spenderName: this.getSpenderName(operator),
-            approvalAmount: "All NFTs",
-            isUnlimited: true,
-            riskLevel: this.calculateRiskLevel(true, operator),
-            lastUpdated: new Date(
-              Number(ethers.getBigInt(log.blockNumber) * 12n) * 1000,
-            ).toISOString(),
-          });
-        } catch (error) {
-          console.error(
-            `Error checking NFT approval for ${tokenAddress}:`,
-            error,
-          );
-          continue;
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching approval events:", error);
-    }
+      pageKey = data.result?.pageKey;
+      pages += 1;
+    } while (pageKey && pages < maxPages);
 
     return approvals;
-  }
-
-  // Query current ERC20 allowance
-  private async getCurrentAllowance(
-    tokenAddress: string,
-    owner: string,
-    spender: string,
-  ): Promise<bigint> {
-    const ERC20_ABI = [
-      "function allowance(address,address) view returns (uint256)",
-    ];
-    const contract = new ethers.Contract(
-      tokenAddress,
-      ERC20_ABI,
-      this.provider,
-    );
-    return await contract.allowance(owner, spender);
-  }
-
-  // Query ERC721 isApprovedForAll
-  private async isApprovedForAll(
-    tokenAddress: string,
-    owner: string,
-    operator: string,
-  ): Promise<boolean> {
-    const ERC721_ABI = [
-      "function isApprovedForAll(address,address) view returns (bool)",
-    ];
-    const contract = new ethers.Contract(
-      tokenAddress,
-      ERC721_ABI,
-      this.provider,
-    );
-    return await contract.isApprovedForAll(owner, operator);
   }
 
   private async getTokenMetadata(tokenAddress: string): Promise<{
@@ -266,6 +148,14 @@ export class ApprovalScanner {
     } catch (error) {
       return { name: null, symbol: null, decimals: null };
     }
+  }
+
+  private getTokenTypeFromCategory(
+    category: string,
+  ): "ERC-20" | "ERC-721" | "ERC-1155" {
+    if (category === "erc20_approval") return "ERC-20";
+    if (category === "erc1155_approval") return "ERC-1155";
+    return "ERC-721";
   }
 
   private getKnownSpenders(): Record<string, string> {
