@@ -124,7 +124,7 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-function getRpcUrl(chainId: number): string {
+export function getRpcUrl(chainId: number): string {
   const network = ALCHEMY_NETWORKS[chainId];
   if (network) {
     return `https://${network}.g.alchemy.com/v2/${API_KEY}`;
