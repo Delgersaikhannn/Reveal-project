@@ -47,8 +47,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return;
       }
       const url = tab.url;
-      if (url.startsWith("chrome://") || url.startsWith("edge://") || url.startsWith("about:")) {
-        sendResponse({ ok: false, error: "Open a normal website (e.g. google.com or any dApp), then try again." });
+      if (
+        url.startsWith("chrome://") ||
+        url.startsWith("edge://") ||
+        url.startsWith("about:")
+      ) {
+        sendResponse({
+          ok: false,
+          error:
+            "Open a normal website (e.g. google.com or any dApp), then try again.",
+        });
         return;
       }
 
@@ -63,7 +71,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           if (chrome.runtime.lastError) {
             sendResponse({
               ok: false,
-              error: chrome.runtime.lastError.message || "Could not run on this page. Try a normal website (https://...) and refresh.",
+              error:
+                chrome.runtime.lastError.message ||
+                "Could not run on this page. Try a normal website (https://...) and refresh.",
             });
             return;
           }
@@ -77,7 +87,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           } else {
             sendResponse({ ok: false, error: "No accounts returned." });
           }
-        }
+        },
       );
     });
     return true;
@@ -91,17 +101,24 @@ function requestAccountsInPage() {
   return new Promise((resolve) => {
     const w = typeof window !== "undefined" ? window : null;
     if (!w || !w.ethereum) {
-      resolve({ error: "No wallet on this page. Install MetaMask and refresh, or open a normal website." });
+      resolve({
+        error:
+          "No wallet on this page. Install MetaMask and refresh, or open a normal website.",
+      });
       return;
     }
     const provider = Array.isArray(w.ethereum) ? w.ethereum[0] : w.ethereum;
     if (!provider || typeof provider.request !== "function") {
-      resolve({ error: "Wallet provider not ready. Refresh the page and try again." });
+      resolve({
+        error: "Wallet provider not ready. Refresh the page and try again.",
+      });
       return;
     }
     provider
       .request({ method: "eth_requestAccounts" })
       .then((accounts) => resolve({ addresses: accounts || [] }))
-      .catch((err) => resolve({ error: err?.message || "Wallet request failed." }));
+      .catch((err) =>
+        resolve({ error: err?.message || "Wallet request failed." }),
+      );
   });
 }
