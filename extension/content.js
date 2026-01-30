@@ -251,6 +251,59 @@
       });
   }
 
+  function showInlineApprovalWarning(payload) {
+    try {
+      const { riskLevel, tokenType, unlimited, domain, spender } = payload;
+      const containerId = "approval-guard-banner";
+      const existing = document.getElementById(containerId);
+      if (existing) existing.remove();
+
+      const banner = document.createElement("div");
+      banner.id = containerId;
+      banner.textContent = `${domain || "This site"} requested ${
+        unlimited ? "UNLIMITED " : ""
+      }${tokenType} approval${spender ? ` to ${formatAddress(spender)}` : ""}`;
+      banner.style.position = "fixed";
+      banner.style.top = "16px";
+      banner.style.right = "16px";
+      banner.style.zIndex = "2147483647";
+      banner.style.padding = "12px 14px";
+      banner.style.borderRadius = "10px";
+      banner.style.fontSize = "14px";
+      banner.style.fontFamily = "Inter, system-ui, -apple-system, sans-serif";
+      banner.style.boxShadow = "0 8px 30px rgba(0,0,0,0.12)";
+      banner.style.color = "#0f172a";
+      banner.style.background =
+        riskLevel === "CRITICAL"
+          ? "#fee2e2"
+          : riskLevel === "HIGH"
+            ? "#fef9c3"
+            : "#e0f2fe";
+      banner.style.border =
+        riskLevel === "CRITICAL"
+          ? "1px solid #ef4444"
+          : riskLevel === "HIGH"
+            ? "1px solid #f59e0b"
+            : "1px solid #38bdf8";
+
+      document.body.appendChild(banner);
+      setTimeout(() => banner.remove(), 6000);
+    } catch (err) {
+      console.debug("[ApprovalGuard] Could not render inline warning", err);
+    }
+  }
+
+  function formatAddress(address) {
+    if (!address || address.length < 10) return "unknown";
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  }
+
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message?.type === "APPROVAL_WARNING") {
+      showInlineApprovalWarning(message);
+    }
+  });
+
   // Initialize detection
   // Try immediately and retry (some wallets inject asynchronously)
   if (!detectWalletProvider()) {

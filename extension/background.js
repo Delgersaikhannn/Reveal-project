@@ -45,7 +45,18 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Listen to messages from content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const tabId = sender.tab?.id;
+  // Popup requests tab state explicitly
+  if (message.type === "GET_TAB_STATE") {
+    const targetTabId = message.tabId || sender.tab?.id;
+    if (targetTabId) {
+      sendResponse(getTabState(targetTabId));
+    } else {
+      sendResponse({});
+    }
+    return; // keep channel closed
+  }
+
+  const tabId = sender.tab?.id || message.tabId;
   if (!tabId) return;
 
   handleContentMessage(message, tabId);
@@ -127,6 +138,29 @@ function handleApprovalDetected(message, tabId) {
   let notificationTitle;
   let notificationMessage;
 
+  const approvalSummary = {
+    type: "APPROVAL_WARNING",
+    riskLevel,
+    tokenType,
+    unlimited,
+    domain,
+    token,
+    spender: spender || operator,
+  };
+
+  chrome.tabs.sendMessage(tabId, approvalSummary, () => {
+    if (chrome.runtime.lastError) {
+      console.debug(
+        "[ApprovalGuard] Could not send warning to tab:",
+        chrome.runtime.lastError.message,
+      );
+    }
+  });
+
+  const baseMessage = `${domain || "This site"} requested ${
+    unlimited ? "UNLIMITED " : ""
+  }${tokenType} approval${spender || operator ? ` to ${formatAddress(spender || operator)}` : ""}`;
+
   if (riskLevel === "CRITICAL") {
     badgeState = BADGE_STATES.CRITICAL;
     notificationTitle = "⚠️ CRITICAL Risk Approval";
@@ -151,12 +185,30 @@ function handleApprovalDetected(message, tabId) {
     });
   } else if (riskLevel === "MEDIUM") {
     badgeState = BADGE_STATES.APPROVAL;
+    notificationTitle = "Approval detected";
+    notificationMessage = baseMessage;
+    showNotification({
+      title: notificationTitle,
+      message: `${notificationMessage}. Review before signing.`,
+    });
   } else if (state?.hasPassport) {
     badgeState = BADGE_STATES.PASSPORT;
+    notificationTitle = "Approval detected";
+    notificationMessage = baseMessage;
+    showNotification({
+      title: notificationTitle,
+      message: `${notificationMessage}.`,
+    });
   } else {
     badgeState = state?.walletDetected
       ? BADGE_STATES.DETECTED
       : BADGE_STATES.NONE;
+    notificationTitle = "Approval detected";
+    notificationMessage = baseMessage;
+    showNotification({
+      title: notificationTitle,
+      message: `${notificationMessage}.`,
+    });
   }
 
   setBadge(tabId, badgeState);
@@ -201,6 +253,11 @@ function assessApprovalRisk({ tokenType, unlimited, spender, token }) {
   } else {
     return "LOW"; // Known protocol or limited approval
   }
+}
+
+function formatAddress(address) {
+  if (!address || address.length < 10) return "unknown";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 // Set badge for tab

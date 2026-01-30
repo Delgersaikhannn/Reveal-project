@@ -1,0 +1,232 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/delgersaikhana/Apes/extension/Reveal-project/claim-module/contracts/ERC20DAOClaimModule.sol": {
+      "lastModificationDate": 1769754233381,
+      "contentHash": "63c46a36ad1b1191a4b63176faca5e53",
+      "sourceName": "contracts/ERC20DAOClaimModule.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IClaimModule.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ERC20DAOClaimModule",
+        "IERC20"
+      ]
+    },
+    "/Users/delgersaikhana/Apes/extension/Reveal-project/claim-module/contracts/IClaimModule.sol": {
+      "lastModificationDate": 1769754233583,
+      "contentHash": "b7c27f098e812663ab6f2968dad50537",
+      "sourceName": "contracts/IClaimModule.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IClaimModule"
+      ]
+    },
+    "/Users/delgersaikhana/Apes/extension/Reveal-project/claim-module/contracts/WalletAgeClaimModule.sol": {
+      "lastModificationDate": 1769754233621,
+      "contentHash": "adb52acdb6426da2d738773fb30588a5",
+      "sourceName": "contracts/WalletAgeClaimModule.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IClaimModule.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "WalletAgeClaimModule"
+      ]
+    },
+    "/Users/delgersaikhana/Apes/extension/Reveal-project/claim-module/contracts/MyDAORegistryAdapter.sol": {
+      "lastModificationDate": 1769754233614,
+      "contentHash": "cb20f68f8730264306036945dfb3dd4b",
+      "sourceName": "contracts/MyDAORegistryAdapter.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IClaimModule.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IMyDAORegistry",
+        "MyDAORegistryAdapter"
+      ]
+    },
+    "/Users/delgersaikhana/Apes/extension/Reveal-project/claim-module/contracts/ERC721ClaimModule.sol": {
+      "lastModificationDate": 1769754233511,
+      "contentHash": "0aa61acc25b985efe1311209fbc44073",
+      "sourceName": "contracts/ERC721ClaimModule.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IClaimModule.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ERC721ClaimModule",
+        "IERC721"
+      ]
+    },
+    "/Users/delgersaikhana/Apes/extension/Reveal-project/claim-module/contracts/test/MockERC721.sol": {
+      "lastModificationDate": 1769760578262,
+      "contentHash": "9748d41d8646f4aa32199f9091e4a3fa",
+      "sourceName": "contracts/test/MockERC721.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "MockERC721"
+      ]
+    }
+  }
+}

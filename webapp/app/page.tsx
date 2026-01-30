@@ -220,17 +220,21 @@ export default function Home() {
   }
 
   async function handleTestApproval() {
-    if (!address) {
-      setError("No wallet connected");
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      // Switch to ApeChain
-      await switchChain({ chainId: 33139 });
+      // Ensure wallet is connected
+      if (!isConnected) {
+        const readyConnector = connectors.find((c) => c.ready) || connectors[0];
+        if (!readyConnector) throw new Error("No wallet connector available");
+        await connect({ connector: readyConnector });
+      }
+
+      // Switch to ApeChain (33139)
+      if (chainId !== 33139) {
+        await switchChain({ chainId: 33139 });
+      }
 
       // Get provider from window.ethereum
       if (!window.ethereum) {
@@ -250,10 +254,24 @@ export default function Home() {
         signer,
       );
 
-      const tx = await tokenContract.approve(testSpenderAddress, amount);
+      const approveData = tokenContract.interface.encodeFunctionData(
+        "approve",
+        [testSpenderAddress, amount],
+      );
 
-      setToast("Approval transaction submitted! Waiting for confirmation...");
-      await tx.wait();
+      const tx = await signer.sendTransaction({
+        to: tokenAddress,
+        data: approveData,
+        value: 0n,
+      });
+
+      setToast(
+        "Approval transaction submitted (no tokens move). Waiting for confirmation...",
+      );
+      const receipt = await tx.wait();
+      if (!receipt || receipt.status !== 1) {
+        throw new Error("Approval transaction failed");
+      }
       setToast(
         `✅ Test approval created successfully!\n\n` +
           `Token: ${tokenAddress}\n` +
