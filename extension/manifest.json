@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Multichain Approval Guard",
+  "name": "Selective Disclosure Wallet",
   "version": "0.1.0",
-  "description": "Detect wallet interactions and scan token approvals across multiple chains",
+  "description": "Prove claims (e.g. DAO Member, NFT Holder) without sharing your wallet address",
   "permissions": [
     "activeTab",
     "storage",
-    "contextMenus"
+    "scripting"
   ],
   "host_permissions": [
     "http://*/*",
@@ -15,14 +15,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_start",
-      "all_frames": false
-    }
-  ],
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
