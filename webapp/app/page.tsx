@@ -2,61 +2,73 @@
 
 import { useAccount } from "wagmi";
 import Link from "next/link";
+import { LampContainer } from "@/components/ui/lamp";
+import { motion } from "motion/react";
+import { EncryptedText } from "@/components/ui/encrypted-text";
 
 export default function Home() {
   const { isConnected } = useAccount();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <LampContainer>
+        <motion.h1
+          initial={{ opacity: 0.5, y: 100 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.3,
+            duration: 0.8,
+            ease: "easeInOut",
+          }}
+          className="mt-8 bg-gradient-to-br from-slate-300 to-slate-500 py-4 bg-clip-text text-center text-4xl font-medium tracking-tight text-transparent md:text-7xl"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700/50 backdrop-blur-sm">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-sm text-slate-300 font-medium">
+              Privacy-First Protocol
+            </span>
+          </div>
+          {/* Main Headline */}
+          <div className="text-6xl md:text-7xl font-bold tracking-tight">
+            <span className="text-white">Prove only</span>
+            <br />
+            <EncryptedText
+              text="what matters."
+              encryptedClassName="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 text-transparent bg-clip-text"
+              revealedClassName="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 text-transparent bg-clip-text"
+              revealDelayMs={50}
+            />
+          </div>
+          <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
+            Generate privacy-preserving proofs from your wallet.
+            <br />
+            No history shared. No signatures stored on-chain.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
+            <Link
+              href="/create"
+              className="group relative px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold text-lg text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all hover:scale-105"
+            >
+              <span className="relative z-10">Create Proof</span>
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 opacity-0 group-hover:opacity-100 blur transition-opacity" />
+            </Link>
+
+            <Link
+              href="/verify"
+              className="px-8 py-4 bg-slate-800/50 border border-slate-700 rounded-xl font-semibold text-lg text-slate-200 hover:bg-slate-800 hover:border-slate-600 transition-all"
+            >
+              Verify Proof
+            </Link>
+          </div>
+        </motion.h1>
+      </LampContainer>
       {/* Subtle Grid Background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
 
       <div className="relative">
         {/* Hero Section */}
-        <div className="max-w-5xl mx-auto px-6 pt-32 pb-20">
-          <div className="text-center space-y-8">
-            {/* Logo Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700/50 backdrop-blur-sm">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm text-slate-300 font-medium">
-                Privacy-First Protocol
-              </span>
-            </div>
-
-            {/* Main Headline */}
-            <h1 className="text-6xl md:text-7xl font-bold tracking-tight">
-              <span className="text-white">Prove only</span>
-              <br />
-              <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 text-transparent bg-clip-text">
-                what matters.
-              </span>
-            </h1>
-
-            <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-              Generate privacy-preserving proofs from your wallet.
-              <br />
-              No history shared. No signatures stored on-chain.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
-              <Link
-                href="/create"
-                className="group relative px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold text-lg text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all hover:scale-105"
-              >
-                <span className="relative z-10">Create Proof</span>
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 opacity-0 group-hover:opacity-100 blur transition-opacity" />
-              </Link>
-
-              <Link
-                href="/verify"
-                className="px-8 py-4 bg-slate-800/50 border border-slate-700 rounded-xl font-semibold text-lg text-slate-200 hover:bg-slate-800 hover:border-slate-600 transition-all"
-              >
-                Verify Proof
-              </Link>
-            </div>
-          </div>
-        </div>
 
         {/* How It Works */}
         <div className="max-w-6xl mx-auto px-6 py-20">
