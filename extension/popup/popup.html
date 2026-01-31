@@ -93,9 +93,21 @@
 
   <div id="screenAddStep2" class="screen">
     <h1>What to prove?</h1>
-    <p class="hint" id="selectedAddressLabel" style="margin-bottom: 10px;"></p>
-    <div class="claim-option" data-claim="DAO Member">DAO Member</div>
-    <div class="claim-option" data-claim="NFT Holder">NFT Holder</div>
+    <p class="hint" id="selectedAddressLabel" style="margin-bottom: 12px;"></p>
+    <p class="hint" style="margin-bottom: 6px;">I hold…</p>
+    <div style="margin-bottom: 8px;">
+      <select id="assetSelect" class="asset-select" style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: #fff;">
+        <option value="weth-sepolia">WETH (Sepolia)</option>
+        <option value="eth-native">Sepolia ETH (native)</option>
+        <option value="custom">Custom ERC20</option>
+      </select>
+    </div>
+    <div id="customTokenWrap" style="display: none; margin-bottom: 8px;">
+      <input type="text" id="customTokenInput" placeholder="0x… token address" class="token-input" style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-family: ui-monospace, monospace;" />
+    </div>
+    <button class="btn btn-primary" id="verifyClaimBtn" style="margin-top: 4px;">Verify</button>
+    <p class="error" id="step2Error" style="display: none; margin-top: 8px;"></p>
+    <p class="hint" id="step2Hint" style="margin-top: 8px;">Proves you hold at least 1 wei.</p>
     <button class="btn btn-secondary" id="backFromStep2" style="margin-top: 12px;">Back</button>
   </div>
 

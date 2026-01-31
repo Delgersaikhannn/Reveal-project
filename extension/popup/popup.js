@@ -130,17 +130,85 @@ function connectNewWallet() {
   });
 }
 
-// --- Step 2: What to prove ---
-function onClaimSelected(claimType) {
-  // For now: add a dummy proof and go back to main
-  proofs.push({
-    id: String(Date.now()),
-    claimType,
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000,
-    recentlySharedWith: [],
-  });
-  renderProofs(proofs);
-  showScreen("screenMain");
+// Asset config: id -> { type: "erc20"|"native", tokenAddress?, label }
+const ASSET_OPTIONS = {
+  "weth-sepolia": { type: "erc20", tokenAddress: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", label: "WETH" },
+  "eth-native": { type: "native", label: "Sepolia ETH" },
+  custom: { type: "erc20", tokenAddress: "", label: "Custom ERC20" },
+};
+
+// --- Step 2: What to prove (dropdown + verify) ---
+function onAssetSelectChange() {
+  const sel = document.getElementById("assetSelect");
+  const wrap = document.getElementById("customTokenWrap");
+  wrap.style.display = sel.value === "custom" ? "block" : "none";
+}
+
+function onVerifyClaim() {
+  const errEl = document.getElementById("step2Error");
+  errEl.style.display = "none";
+  errEl.textContent = "";
+  const hintEl = document.getElementById("step2Hint");
+  const btn = document.getElementById("verifyClaimBtn");
+  const assetId = document.getElementById("assetSelect").value;
+  const customAddr = document.getElementById("customTokenInput").value.trim();
+
+  const opt = ASSET_OPTIONS[assetId] || ASSET_OPTIONS.custom;
+  let tokenAddress = opt.tokenAddress;
+  if (assetId === "custom") {
+    tokenAddress = customAddr.replace(/^0x/, "") ? (customAddr.startsWith("0x") ? customAddr : "0x" + customAddr) : "";
+    if (!tokenAddress || tokenAddress.length !== 42) {
+      errEl.textContent = "Enter a valid ERC20 token address (0x…).";
+      errEl.style.display = "block";
+      return;
+    }
+  }
+
+  const minBalanceWei = "1";
+  const assetLabel = opt.label || (assetId === "custom" ? "Custom" : "Token");
+  const proofLabel = `Hold ${assetLabel}`;
+
+  btn.disabled = true;
+  hintEl.textContent = "Checking…";
+
+  chrome.runtime.sendMessage(
+    {
+      type: "CHECK_CLAIM",
+      address: selectedAddress,
+      assetType: opt.type,
+      tokenAddress: opt.type === "erc20" ? tokenAddress : undefined,
+      minBalanceWei,
+      assetLabel: proofLabel,
+    },
+    (res) => {
+      btn.disabled = false;
+      hintEl.textContent = "Proves you hold at least 1 wei.";
+      if (!res) {
+        errEl.textContent = "No response. Open a normal website and try again.";
+        errEl.style.display = "block";
+        return;
+      }
+      if (!res.ok) {
+        errEl.textContent = res.error || "Check failed.";
+        errEl.style.display = "block";
+        return;
+      }
+      if (!res.verified) {
+        errEl.textContent = "You don't satisfy this claim.";
+        errEl.style.display = "block";
+        return;
+      }
+      const sharedWith = res.origin ? [res.origin] : [];
+      proofs.push({
+        id: String(Date.now()),
+        claimType: proofLabel,
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+        recentlySharedWith: sharedWith,
+      });
+      renderProofs(proofs);
+      showScreen("screenMain");
+    }
+  );
 }
 
 // --- Init ---
@@ -154,7 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("backFromStep2").addEventListener("click", () => openAddStep1());
 
-  document.querySelectorAll(".claim-option").forEach((el) => {
-    el.addEventListener("click", () => onClaimSelected(el.dataset.claim));
-  });
+  document.getElementById("assetSelect").addEventListener("change", onAssetSelectChange);
+  document.getElementById("verifyClaimBtn").addEventListener("click", onVerifyClaim);
 });
