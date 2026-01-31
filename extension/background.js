@@ -7,6 +7,7 @@
  */
 
 const STORAGE_KEY_ADDRESSES = "selective_disclosure_saved_addresses";
+const STORAGE_KEY_PROOFS = "selective_disclosure_proofs";
 
 // ERC20DAOClaimModule: verify(address user, bytes calldata data) where data = abi.encode(token, minBalance)
 const ERC20_CLAIM_MODULE = {
@@ -24,6 +25,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const list = result[STORAGE_KEY_ADDRESSES] || [];
       sendResponse({ addresses: list });
     });
+    return true;
+  }
+
+  if (message.type === "GET_SAVED_PROOFS") {
+    chrome.storage.local.get([STORAGE_KEY_PROOFS], (result) => {
+      const list = result[STORAGE_KEY_PROOFS] || [];
+      sendResponse({ proofs: list });
+    });
+    return true;
+  }
+
+  if (message.type === "SAVE_PROOFS") {
+    const { proofs } = message;
+    if (!Array.isArray(proofs)) {
+      sendResponse({ ok: false });
+      return false;
+    }
+    chrome.storage.local.set({ [STORAGE_KEY_PROOFS]: proofs });
+    sendResponse({ ok: true });
     return true;
   }
 

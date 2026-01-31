@@ -4,12 +4,6 @@
  * Add new proof: Step 1 = Connect or select wallet, Step 2 = What to prove (DAO Member / NFT Holder).
  */
 
-const DUMMY_PROOFS = [
-  { id: "1", claimType: "DAO Member", expiresAt: Date.now() + 2 * 60 * 60 * 1000, recentlySharedWith: ["app.uniswap.org", "vote.ens.domains"] },
-  { id: "2", claimType: "NFT Holder", expiresAt: Date.now() + 24 * 60 * 60 * 1000, recentlySharedWith: ["opensea.io"] },
-  { id: "3", claimType: "DAO Member", expiresAt: Date.now() + 30 * 60 * 1000, recentlySharedWith: [] },
-];
-
 function formatTTL(expiresAt) {
   const ms = expiresAt - Date.now();
   if (ms <= 0) return "Expired";
@@ -63,7 +57,7 @@ function renderProofs(proofs) {
 
 // --- Add new proof: Step 1 (connect or select) ---
 let selectedAddress = null;
-let proofs = [...DUMMY_PROOFS];
+let proofs = [];
 
 function openAddStep1() {
   selectedAddress = null;
@@ -205,6 +199,7 @@ function onVerifyClaim() {
         expiresAt: Date.now() + 24 * 60 * 60 * 1000,
         recentlySharedWith: sharedWith,
       });
+      chrome.storage.local.set({ selective_disclosure_proofs: proofs });
       renderProofs(proofs);
       showScreen("screenMain");
     }
@@ -213,7 +208,10 @@ function onVerifyClaim() {
 
 // --- Init ---
 document.addEventListener("DOMContentLoaded", () => {
-  renderProofs(proofs);
+  chrome.storage.local.get(["selective_disclosure_proofs"], (result) => {
+    proofs = result.selective_disclosure_proofs || [];
+    renderProofs(proofs);
+  });
 
   document.getElementById("addNewProof").addEventListener("click", openAddStep1);
 
