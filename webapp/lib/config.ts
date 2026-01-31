@@ -1,9 +1,7 @@
 import { http, createConfig } from "wagmi";
-import { mainnet, arbitrum, polygon } from "wagmi/chains";
-import { injected, walletConnect } from "wagmi/connectors";
+import { mainnet, arbitrum, polygon, sepolia } from "wagmi/chains";
+import { injected } from "wagmi/connectors";
 import type { Chain } from "wagmi";
-
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "";
 
 // ApeChain (custom) - update RPC via env
 export const apechain: Chain = {
@@ -27,18 +25,13 @@ export const apechain: Chain = {
 };
 
 export const config = createConfig({
-  chains: [mainnet, arbitrum, polygon, apechain],
-  connectors: [
-    injected(),
-    walletConnect({
-      projectId,
-      showQrModal: true,
-    }),
-  ],
+  chains: [mainnet, arbitrum, polygon, sepolia, apechain],
+  connectors: [injected()],
   transports: {
     [mainnet.id]: http(),
     [arbitrum.id]: http(),
     [polygon.id]: http(),
+    [sepolia.id]: http(),
     [apechain.id]: http(process.env.NEXT_PUBLIC_APECHAIN_RPC_URL || ""),
   },
 });
@@ -48,6 +41,7 @@ export const CHAIN_NAMES: Record<number, string> = {
   [mainnet.id]: "Ethereum",
   [arbitrum.id]: "Arbitrum",
   [polygon.id]: "Polygon",
+  [sepolia.id]: "Sepolia",
   [apechain.id]: "ApeChain",
 };
 

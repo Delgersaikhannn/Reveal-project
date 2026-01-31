@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "./providers";
+import { SelectiveProviders } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Multichain Approval Manager",
-  description: "Scan and revoke token & NFT approvals across multiple chains",
+  title: "Selective Disclosure Wallet",
+  description:
+    "Privacy-preserving proofs from your wallet. Prove only what matters.",
 };
 
 export default function RootLayout({
@@ -28,7 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <SelectiveProviders>{children}</SelectiveProviders>
       </body>
     </html>
   );
