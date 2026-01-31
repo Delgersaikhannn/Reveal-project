@@ -131,6 +131,11 @@ const DAO_OPTIONS = [
   { id: "ens", name: "ENS", token: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", iconUrl: "https://ens.domains/favicon.ico", fallback: "E" },
 ];
 
+// NFT collections: Sepolia (user-provided contract 0x5867...)
+const NFT_OPTIONS = [
+  { id: "sepolia-nft", name: "Sepolia NFT", nftContract: "0x5867eaF2a28034124bC05583EB6Ee20323e01EE3", iconUrl: null, fallback: "🖼" },
+];
+
 // Token Holder asset options
 const ASSET_OPTIONS = {
   "weth-sepolia": { type: "erc20", tokenAddress: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", label: "WETH" },
@@ -191,7 +196,7 @@ function onVerifyToken() {
   runVerify({ assetType: opt.type, tokenAddress: opt.type === "erc20" ? tokenAddress : undefined, proofLabel: `Hold ${assetLabel}` });
 }
 
-function runVerify({ assetType, tokenAddress, proofLabel }) {
+function runVerify({ assetType, tokenAddress, nftContractAddress, proofLabel }) {
   const errEl = document.getElementById("step2Error");
   const hintEl = document.getElementById("step2Hint");
   errEl.style.display = "none";
@@ -199,15 +204,18 @@ function runVerify({ assetType, tokenAddress, proofLabel }) {
   hintEl.style.display = "block";
   hintEl.textContent = "Checking…";
 
+  const payload = {
+    type: "CHECK_CLAIM",
+    address: selectedAddress,
+    assetType,
+    minBalanceWei: "1",
+    assetLabel: proofLabel,
+  };
+  if (assetType === "erc20") payload.tokenAddress = tokenAddress;
+  if (assetType === "nft") payload.nftContractAddress = nftContractAddress;
+
   chrome.runtime.sendMessage(
-    {
-      type: "CHECK_CLAIM",
-      address: selectedAddress,
-      assetType,
-      tokenAddress: assetType === "erc20" ? tokenAddress : undefined,
-      minBalanceWei: "1",
-      assetLabel: proofLabel,
-    },
+    payload,
     (res) => {
       hintEl.textContent = "";
       hintEl.style.display = "none";
@@ -262,6 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderDaoList();
         showStep2Panel("step2PanelDao");
       } else if (type === "nft") {
+        renderNftList();
         showStep2Panel("step2PanelNft");
       } else if (type === "token") {
         showStep2Panel("step2PanelToken");

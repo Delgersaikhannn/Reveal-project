@@ -15,6 +15,12 @@ const ERC20_CLAIM_MODULE = {
   verifySelector: "0x4a41d1ac",
 };
 
+// ERC721ClaimModule: verify(address user, bytes calldata data) where data = abi.decode(data, (address)) = NFT contract
+const ERC721_CLAIM_MODULE = {
+  address: "0x5867eaF2a28034124bC05583EB6Ee20323e01EE3",
+  verifySelector: "0x4a41d1ac",
+};
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log("[SelectiveDisclosure] Extension installed");
 });
@@ -120,7 +126,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "CHECK_CLAIM") {
-    const { address, assetType, tokenAddress, minBalanceWei } = message;
+    const { address, assetType, tokenAddress, nftContractAddress, minBalanceWei } = message;
     if (!address) {
       sendResponse({ ok: false, error: "Missing address." });
       return false;
@@ -139,6 +145,45 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           origin = new URL(tab.url).hostname;
         }
       } catch (_) {}
+
+      if (assetType === "nft") {
+        const nftContract = (nftContractAddress || "").trim();
+        if (!nftContract || nftContract.length !== 42) {
+          sendResponse({ ok: false, error: "Invalid NFT contract address." });
+          return false;
+        }
+        const moduleAddress = ERC721_CLAIM_MODULE.address;
+        if (!moduleAddress || moduleAddress === "0x0000000000000000000000000000000000000000") {
+          sendResponse({ ok: false, error: "ERC721 module not configured. Deploy ERC721ClaimModule and set ERC721_CLAIM_MODULE.address." });
+          return false;
+        }
+        const calldata = buildVerifyCalldataForNFT(address, nftContract);
+        if (!calldata) {
+          sendResponse({ ok: false, error: "Invalid address or NFT contract." });
+          return false;
+        }
+        chrome.scripting.executeScript(
+          {
+            target: { tabId: tab.id },
+            world: "MAIN",
+            func: callContractInPage,
+            args: [moduleAddress, calldata],
+          },
+          (results) => {
+            if (chrome.runtime.lastError) {
+              sendResponse({ ok: false, error: chrome.runtime.lastError.message || "Could not call contract." });
+              return;
+            }
+            const r = results?.[0]?.result;
+            if (r?.error) {
+              sendResponse({ ok: false, error: r.error });
+              return;
+            }
+            sendResponse({ ok: true, verified: !!r?.verified, origin });
+          }
+        );
+        return;
+      }
 
       if (assetType === "native") {
         // Native ETH: use eth_getBalance, no contract
@@ -205,6 +250,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
+
+/**
+ * Build calldata for ERC721 module: verify(address user, bytes data) where data = abi.encode(nftContract).
+ * Returns hex string (no 0x prefix) or null if invalid.
+ */
+function buildVerifyCalldataForNFT(userAddress, nftContractAddress) {
+  const user = (userAddress || "").replace(/^0x/, "").toLowerCase();
+  const nft = (nftContractAddress || "").replace(/^0x/, "").toLowerCase();
+  if (user.length !== 40 || nft.length !== 40) return null;
+  const selector = (ERC721_CLAIM_MODULE.verifySelector || "").replace(/^0x/, "");
+  if (selector.length !== 8) return null;
+  const offset = "0000000000000000000000000000000000000000000000000000000000000040";
+  const length = "0000000000000000000000000000000000000000000000000000000000000020";
+  const nftPadded = nft.padStart(64, "0");
+  return selector + user.padStart(64, "0") + offset + length + nftPadded;
+}
 
 /**
  * Build calldata for verify(address user, bytes data) where data = abi.encode(token, minBalance).

@@ -86,6 +86,8 @@ Thumbs.db
 .parcel-cache
 .eslintcache
 
+extension/SELECTIVE_DISCLOSURE_PLAN.md
+
 # Optional: Package manager lock files (uncomment if you want to ignore)
 # package-lock.json
 # yarn.lock
