@@ -56,6 +56,10 @@
       font-family: ui-monospace, monospace;
     }
     .wallet-item:hover { background: #f3f4f6; }
+    .wallet-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .wallet-item-address { flex: 1; }
+    .wallet-delete { padding: 4px 8px; font-size: 12px; color: #6b7280; background: transparent; border: none; border-radius: 4px; cursor: pointer; }
+    .wallet-delete:hover { color: #dc2626; background: #fef2f2; }
     .btn {
       width: 100%; padding: 10px 12px; border: none; border-radius: 8px;
       font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 6px;
@@ -108,7 +112,7 @@
     <ul class="wallet-list" id="savedWalletList"></ul>
     <button class="btn btn-primary" id="connectNewWallet">Connect new wallet</button>
     <p class="error" id="step1Error" style="display: none;"></p>
-    <p class="hint" id="step1Hint">Approve the connection in MetaMask (in the tab) when prompted.</p>
+    <p class="hint" id="step1Hint">Approve the connection and sign the message in MetaMask to prove you control the wallet.</p>
     <button class="btn btn-secondary" id="backFromStep1" style="margin-top: 12px;">Back</button>
   </div>
 

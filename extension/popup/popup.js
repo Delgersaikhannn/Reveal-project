@@ -64,23 +64,7 @@ function openAddStep1() {
   showScreen("screenAddStep1");
   document.getElementById("step1Error").style.display = "none";
   document.getElementById("step1Error").textContent = "";
-  chrome.runtime.sendMessage({ type: "GET_SAVED_ADDRESSES" }, (res) => {
-    const list = document.getElementById("savedWalletList");
-    list.innerHTML = "";
-    const addresses = (res && res.addresses) || [];
-    if (addresses.length === 0) {
-      list.innerHTML = '<li class="wallet-item" style="cursor: default; color: #6b7280;">No saved wallets yet. Connect a wallet below.</li>';
-    } else {
-      addresses.forEach(({ address }) => {
-        const li = document.createElement("li");
-        li.className = "wallet-item";
-        li.textContent = shortenAddress(address);
-        li.dataset.address = address;
-        li.addEventListener("click", () => selectSavedAddress(address));
-        list.appendChild(li);
-      });
-    }
-  });
+  refreshWalletList();
 }
 
 function selectSavedAddress(address) {
@@ -89,13 +73,45 @@ function selectSavedAddress(address) {
   showScreen("screenAddStep2");
 }
 
+function deleteWallet(address, onDone) {
+  chrome.runtime.sendMessage({ type: "DELETE_ADDRESS", address }, () => {
+    if (onDone) onDone();
+  });
+}
+
+function refreshWalletList() {
+  chrome.runtime.sendMessage({ type: "GET_SAVED_ADDRESSES" }, (res) => {
+    const list = document.getElementById("savedWalletList");
+    list.innerHTML = "";
+    const addresses = (res && res.addresses) || [];
+    if (addresses.length === 0) {
+      list.innerHTML = '<li style="cursor: default; color: #6b7280; padding: 10px 12px;">No saved wallets yet. Connect a wallet below.</li>';
+    } else {
+      addresses.forEach(({ address }) => {
+        const li = document.createElement("li");
+        li.className = "wallet-item";
+        li.innerHTML = `<span class="wallet-item-address">${shortenAddress(address)}</span><button class="wallet-delete" type="button" aria-label="Remove wallet">Remove</button>`;
+        li.dataset.address = address;
+        const addrEl = li.querySelector(".wallet-item-address");
+        const delBtn = li.querySelector(".wallet-delete");
+        addrEl.addEventListener("click", () => selectSavedAddress(address));
+        delBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deleteWallet(address, () => refreshWalletList());
+        });
+        list.appendChild(li);
+      });
+    }
+  });
+}
+
 function connectNewWallet() {
   const errEl = document.getElementById("step1Error");
   errEl.style.display = "none";
   errEl.textContent = "";
   const btn = document.getElementById("connectNewWallet");
   btn.disabled = true;
-  btn.textContent = "Check MetaMask in the tab…";
+  btn.textContent = "Approve in MetaMask…";
 
   chrome.runtime.sendMessage({ type: "CONNECT_NEW_WALLET" }, (res) => {
     btn.disabled = false;

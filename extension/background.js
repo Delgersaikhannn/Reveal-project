@@ -71,6 +71,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "DELETE_ADDRESS") {
+    const { address } = message;
+    if (!address) {
+      sendResponse({ ok: false });
+      return false;
+    }
+    chrome.storage.local.get([STORAGE_KEY_ADDRESSES], (result) => {
+      const list = result[STORAGE_KEY_ADDRESSES] || [];
+      const lower = address.toLowerCase();
+      const filtered = list.filter((a) => a.address.toLowerCase() !== lower);
+      chrome.storage.local.set({ [STORAGE_KEY_ADDRESSES]: filtered });
+      sendResponse({ ok: true });
+    });
+    return true;
+  }
+
   if (message.type === "CONNECT_NEW_WALLET") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tab = tabs[0];
@@ -436,7 +452,9 @@ function callContractInPage(contractAddress, calldataHex) {
 }
 
 /**
- * Runs in the page context (world: MAIN). Must be a plain function, no closures.
+ * Runs in the page context (world: MAIN). Requests accounts via eth_requestAccounts,
+ * then proves control by having the user sign a message (personal_sign). Both steps
+ * require user interaction with MetaMask.
  */
 function requestAccountsInPage() {
   return new Promise((resolve) => {
@@ -457,7 +475,21 @@ function requestAccountsInPage() {
     }
     provider
       .request({ method: "eth_requestAccounts" })
-      .then((accounts) => resolve({ addresses: accounts || [] }))
+      .then((accounts) => {
+        const addr = accounts && accounts[0];
+        if (!addr) {
+          resolve({ error: "No accounts returned." });
+          return;
+        }
+        const msg = "Sign to prove you control this wallet for Selective Disclosure.\n\n" + Date.now();
+        const hexMsg = "0x" + Array.from(new TextEncoder().encode(msg)).map((b) => b.toString(16).padStart(2, "0")).join("");
+        return provider.request({
+          method: "personal_sign",
+          params: [hexMsg, addr],
+        }).then(() => resolve({ addresses: [addr] })).catch((err) =>
+          resolve({ error: err?.message || "Signature rejected or failed." }),
+        );
+      })
       .catch((err) =>
         resolve({ error: err?.message || "Wallet request failed." }),
       );
