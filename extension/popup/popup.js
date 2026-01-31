@@ -124,59 +124,93 @@ function connectNewWallet() {
   });
 }
 
-// Asset config: id -> { type: "erc20"|"native", tokenAddress?, label }
+// DAOs: gov token icon (optional iconUrl) + token address (Sepolia test: WETH; mainnet would use real gov token)
+const DAO_OPTIONS = [
+  { id: "moondao", name: "MoonDAO", token: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", iconUrl: "https://moondao.com/favicon.ico", fallback: "M" },
+  { id: "uniswap", name: "Uniswap", token: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", iconUrl: "https://app.uniswap.org/favicon.ico", fallback: "U" },
+  { id: "ens", name: "ENS", token: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", iconUrl: "https://ens.domains/favicon.ico", fallback: "E" },
+];
+
+// Token Holder asset options
 const ASSET_OPTIONS = {
   "weth-sepolia": { type: "erc20", tokenAddress: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", label: "WETH" },
   "eth-native": { type: "native", label: "Sepolia ETH" },
   custom: { type: "erc20", tokenAddress: "", label: "Custom ERC20" },
 };
 
-// --- Step 2: What to prove (dropdown + verify) ---
+// --- Step 2: Claim type selection ---
+function showStep2Panel(panelId) {
+  document.querySelectorAll("#screenAddStep2 .step2-panel").forEach((p) => p.classList.remove("active"));
+  const panel = document.getElementById(panelId);
+  if (panel) panel.classList.add("active");
+  document.getElementById("step2Error").style.display = "none";
+  document.getElementById("step2Error").textContent = "";
+}
+
+function renderDaoList() {
+  const list = document.getElementById("daoList");
+  list.innerHTML = "";
+  DAO_OPTIONS.forEach((dao) => {
+    const div = document.createElement("div");
+    div.className = "dao-option";
+    div.dataset.daoId = dao.id;
+    div.innerHTML = `
+      ${dao.iconUrl ? `<img class="dao-icon" src="${dao.iconUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span class="dao-icon-fallback" style="display: none;">${dao.fallback}</span>` : `<span class="dao-icon-fallback">${dao.fallback}</span>`}
+      <span>${dao.name}</span>
+    `;
+    div.addEventListener("click", () => onDaoSelected(dao));
+    list.appendChild(div);
+  });
+}
+
+function onDaoSelected(dao) {
+  runVerify({ assetType: "erc20", tokenAddress: dao.token, proofLabel: `${dao.name} Member` });
+}
+
+// --- Step 2: Token Holder ---
 function onAssetSelectChange() {
   const sel = document.getElementById("assetSelect");
   const wrap = document.getElementById("customTokenWrap");
   wrap.style.display = sel.value === "custom" ? "block" : "none";
 }
 
-function onVerifyClaim() {
-  const errEl = document.getElementById("step2Error");
-  errEl.style.display = "none";
-  errEl.textContent = "";
-  const hintEl = document.getElementById("step2Hint");
-  const btn = document.getElementById("verifyClaimBtn");
+function onVerifyToken() {
   const assetId = document.getElementById("assetSelect").value;
   const customAddr = document.getElementById("customTokenInput").value.trim();
-
   const opt = ASSET_OPTIONS[assetId] || ASSET_OPTIONS.custom;
   let tokenAddress = opt.tokenAddress;
   if (assetId === "custom") {
     tokenAddress = customAddr.replace(/^0x/, "") ? (customAddr.startsWith("0x") ? customAddr : "0x" + customAddr) : "";
     if (!tokenAddress || tokenAddress.length !== 42) {
-      errEl.textContent = "Enter a valid ERC20 token address (0x…).";
-      errEl.style.display = "block";
+      document.getElementById("step2Error").textContent = "Enter a valid ERC20 token address (0x…).";
+      document.getElementById("step2Error").style.display = "block";
       return;
     }
   }
-
-  const minBalanceWei = "1";
   const assetLabel = opt.label || (assetId === "custom" ? "Custom" : "Token");
-  const proofLabel = `Hold ${assetLabel}`;
+  runVerify({ assetType: opt.type, tokenAddress: opt.type === "erc20" ? tokenAddress : undefined, proofLabel: `Hold ${assetLabel}` });
+}
 
-  btn.disabled = true;
+function runVerify({ assetType, tokenAddress, proofLabel }) {
+  const errEl = document.getElementById("step2Error");
+  const hintEl = document.getElementById("step2Hint");
+  errEl.style.display = "none";
+  errEl.textContent = "";
+  hintEl.style.display = "block";
   hintEl.textContent = "Checking…";
 
   chrome.runtime.sendMessage(
     {
       type: "CHECK_CLAIM",
       address: selectedAddress,
-      assetType: opt.type,
-      tokenAddress: opt.type === "erc20" ? tokenAddress : undefined,
-      minBalanceWei,
+      assetType,
+      tokenAddress: assetType === "erc20" ? tokenAddress : undefined,
+      minBalanceWei: "1",
       assetLabel: proofLabel,
     },
     (res) => {
-      btn.disabled = false;
-      hintEl.textContent = "Proves you hold at least 1 wei.";
+      hintEl.textContent = "";
+      hintEl.style.display = "none";
       if (!res) {
         errEl.textContent = "No response. Open a normal website and try again.";
         errEl.style.display = "block";
@@ -220,6 +254,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("backFromStep2").addEventListener("click", () => openAddStep1());
 
+  // Claim type selection
+  document.querySelectorAll(".claim-type-option[data-claim-type]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const type = el.dataset.claimType;
+      if (type === "dao") {
+        renderDaoList();
+        showStep2Panel("step2PanelDao");
+      } else if (type === "nft") {
+        showStep2Panel("step2PanelNft");
+      } else if (type === "token") {
+        showStep2Panel("step2PanelToken");
+      }
+    });
+  });
+
+  document.getElementById("step2BackFromDao").addEventListener("click", () => showStep2Panel("step2PanelChoice"));
+  document.getElementById("step2BackFromNft").addEventListener("click", () => showStep2Panel("step2PanelChoice"));
+  document.getElementById("step2BackFromToken").addEventListener("click", () => showStep2Panel("step2PanelChoice"));
+
   document.getElementById("assetSelect").addEventListener("change", onAssetSelectChange);
-  document.getElementById("verifyClaimBtn").addEventListener("click", onVerifyClaim);
+  document.getElementById("verifyTokenBtn").addEventListener("click", onVerifyToken);
 });
