@@ -4,12 +4,6 @@
  * Add new proof: Step 1 = Connect or select wallet, Step 2 = What to prove (DAO Member / NFT Holder).
  */
 
-const DUMMY_PROOFS = [
-  { id: "1", claimType: "DAO Member", expiresAt: Date.now() + 2 * 60 * 60 * 1000, recentlySharedWith: ["app.uniswap.org", "vote.ens.domains"] },
-  { id: "2", claimType: "NFT Holder", expiresAt: Date.now() + 24 * 60 * 60 * 1000, recentlySharedWith: ["opensea.io"] },
-  { id: "3", claimType: "DAO Member", expiresAt: Date.now() + 30 * 60 * 1000, recentlySharedWith: [] },
-];
-
 function formatTTL(expiresAt) {
   const ms = expiresAt - Date.now();
   if (ms <= 0) return "Expired";
@@ -63,7 +57,7 @@ function renderProofs(proofs) {
 
 // --- Add new proof: Step 1 (connect or select) ---
 let selectedAddress = null;
-let proofs = [...DUMMY_PROOFS];
+let proofs = [];
 
 function openAddStep1() {
   selectedAddress = null;
@@ -130,22 +124,136 @@ function connectNewWallet() {
   });
 }
 
-// --- Step 2: What to prove ---
-function onClaimSelected(claimType) {
-  // For now: add a dummy proof and go back to main
-  proofs.push({
-    id: String(Date.now()),
-    claimType,
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000,
-    recentlySharedWith: [],
+// DAOs: gov token icon (optional iconUrl) + token address (Sepolia test: WETH; mainnet would use real gov token)
+const DAO_OPTIONS = [
+  { id: "moondao", name: "MoonDAO", token: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", iconUrl: "https://moondao.com/favicon.ico", fallback: "M" },
+  { id: "uniswap", name: "Uniswap", token: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", iconUrl: "https://app.uniswap.org/favicon.ico", fallback: "U" },
+  { id: "ens", name: "ENS", token: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", iconUrl: "https://ens.domains/favicon.ico", fallback: "E" },
+];
+
+// NFT collections: Sepolia (user-provided contract 0x5867...)
+const NFT_OPTIONS = [
+  { id: "sepolia-nft", name: "Sepolia NFT", nftContract: "0x5867eaF2a28034124bC05583EB6Ee20323e01EE3", iconUrl: null, fallback: "🖼" },
+];
+
+// Token Holder asset options
+const ASSET_OPTIONS = {
+  "weth-sepolia": { type: "erc20", tokenAddress: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", label: "WETH" },
+  "eth-native": { type: "native", label: "Sepolia ETH" },
+  custom: { type: "erc20", tokenAddress: "", label: "Custom ERC20" },
+};
+
+// --- Step 2: Claim type selection ---
+function showStep2Panel(panelId) {
+  document.querySelectorAll("#screenAddStep2 .step2-panel").forEach((p) => p.classList.remove("active"));
+  const panel = document.getElementById(panelId);
+  if (panel) panel.classList.add("active");
+  document.getElementById("step2Error").style.display = "none";
+  document.getElementById("step2Error").textContent = "";
+}
+
+function renderDaoList() {
+  const list = document.getElementById("daoList");
+  list.innerHTML = "";
+  DAO_OPTIONS.forEach((dao) => {
+    const div = document.createElement("div");
+    div.className = "dao-option";
+    div.dataset.daoId = dao.id;
+    div.innerHTML = `
+      ${dao.iconUrl ? `<img class="dao-icon" src="${dao.iconUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span class="dao-icon-fallback" style="display: none;">${dao.fallback}</span>` : `<span class="dao-icon-fallback">${dao.fallback}</span>`}
+      <span>${dao.name}</span>
+    `;
+    div.addEventListener("click", () => onDaoSelected(dao));
+    list.appendChild(div);
   });
-  renderProofs(proofs);
-  showScreen("screenMain");
+}
+
+function onDaoSelected(dao) {
+  runVerify({ assetType: "erc20", tokenAddress: dao.token, proofLabel: `${dao.name} Member` });
+}
+
+// --- Step 2: Token Holder ---
+function onAssetSelectChange() {
+  const sel = document.getElementById("assetSelect");
+  const wrap = document.getElementById("customTokenWrap");
+  wrap.style.display = sel.value === "custom" ? "block" : "none";
+}
+
+function onVerifyToken() {
+  const assetId = document.getElementById("assetSelect").value;
+  const customAddr = document.getElementById("customTokenInput").value.trim();
+  const opt = ASSET_OPTIONS[assetId] || ASSET_OPTIONS.custom;
+  let tokenAddress = opt.tokenAddress;
+  if (assetId === "custom") {
+    tokenAddress = customAddr.replace(/^0x/, "") ? (customAddr.startsWith("0x") ? customAddr : "0x" + customAddr) : "";
+    if (!tokenAddress || tokenAddress.length !== 42) {
+      document.getElementById("step2Error").textContent = "Enter a valid ERC20 token address (0x…).";
+      document.getElementById("step2Error").style.display = "block";
+      return;
+    }
+  }
+  const assetLabel = opt.label || (assetId === "custom" ? "Custom" : "Token");
+  runVerify({ assetType: opt.type, tokenAddress: opt.type === "erc20" ? tokenAddress : undefined, proofLabel: `Hold ${assetLabel}` });
+}
+
+function runVerify({ assetType, tokenAddress, nftContractAddress, proofLabel }) {
+  const errEl = document.getElementById("step2Error");
+  const hintEl = document.getElementById("step2Hint");
+  errEl.style.display = "none";
+  errEl.textContent = "";
+  hintEl.style.display = "block";
+  hintEl.textContent = "Checking…";
+
+  const payload = {
+    type: "CHECK_CLAIM",
+    address: selectedAddress,
+    assetType,
+    minBalanceWei: "1",
+    assetLabel: proofLabel,
+  };
+  if (assetType === "erc20") payload.tokenAddress = tokenAddress;
+  if (assetType === "nft") payload.nftContractAddress = nftContractAddress;
+
+  chrome.runtime.sendMessage(
+    payload,
+    (res) => {
+      hintEl.textContent = "";
+      hintEl.style.display = "none";
+      if (!res) {
+        errEl.textContent = "No response. Open a normal website and try again.";
+        errEl.style.display = "block";
+        return;
+      }
+      if (!res.ok) {
+        errEl.textContent = res.error || "Check failed.";
+        errEl.style.display = "block";
+        return;
+      }
+      if (!res.verified) {
+        errEl.textContent = "You don't satisfy this claim.";
+        errEl.style.display = "block";
+        return;
+      }
+      const sharedWith = res.origin ? [res.origin] : [];
+      proofs.push({
+        id: String(Date.now()),
+        claimType: proofLabel,
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+        recentlySharedWith: sharedWith,
+      });
+      chrome.storage.local.set({ selective_disclosure_proofs: proofs });
+      renderProofs(proofs);
+      showScreen("screenMain");
+    }
+  );
 }
 
 // --- Init ---
 document.addEventListener("DOMContentLoaded", () => {
-  renderProofs(proofs);
+  chrome.storage.local.get(["selective_disclosure_proofs"], (result) => {
+    proofs = result.selective_disclosure_proofs || [];
+    renderProofs(proofs);
+  });
 
   document.getElementById("addNewProof").addEventListener("click", openAddStep1);
 
@@ -154,7 +262,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("backFromStep2").addEventListener("click", () => openAddStep1());
 
-  document.querySelectorAll(".claim-option").forEach((el) => {
-    el.addEventListener("click", () => onClaimSelected(el.dataset.claim));
+  // Claim type selection
+  document.querySelectorAll(".claim-type-option[data-claim-type]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const type = el.dataset.claimType;
+      if (type === "dao") {
+        renderDaoList();
+        showStep2Panel("step2PanelDao");
+      } else if (type === "nft") {
+        renderNftList();
+        showStep2Panel("step2PanelNft");
+      } else if (type === "token") {
+        showStep2Panel("step2PanelToken");
+      }
+    });
   });
+
+  document.getElementById("step2BackFromDao").addEventListener("click", () => showStep2Panel("step2PanelChoice"));
+  document.getElementById("step2BackFromNft").addEventListener("click", () => showStep2Panel("step2PanelChoice"));
+  document.getElementById("step2BackFromToken").addEventListener("click", () => showStep2Panel("step2PanelChoice"));
+
+  document.getElementById("assetSelect").addEventListener("change", onAssetSelectChange);
+  document.getElementById("verifyTokenBtn").addEventListener("click", onVerifyToken);
 });
