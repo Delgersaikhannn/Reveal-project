@@ -22,9 +22,10 @@ const ENS_TEXT_RECORDS = [
 /**
  * Resolve ENS name or address to normalized identity
  */
-export async function getResolvedIdentity(
-  input: { ens?: string | null; address?: string | null },
-): Promise<ResolvedIdentity> {
+export async function getResolvedIdentity(input: {
+  ens?: string | null;
+  address?: string | null;
+}): Promise<ResolvedIdentity> {
   const { ens, address } = input;
 
   if (!ens && !address) {
@@ -37,7 +38,7 @@ export async function getResolvedIdentity(
 
   let resolvedAddress: string | null = null;
   let resolvedEns: string | null = null;
-  let displayName: string;
+  let displayName: string = "";
 
   // If ENS provided, resolve to address
   if (ens) {

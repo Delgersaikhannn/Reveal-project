@@ -3,6 +3,7 @@ import { createPublicClient, http, erc20Abi } from "viem";
 import { erc721Abi, erc1155Abi } from "viem";
 import { mainnet, arbitrum, polygon } from "wagmi/chains";
 import { ALCHEMY_NETWORKS, apechain } from "./config";
+import type { Chain } from "viem";
 
 const API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || "";
 
@@ -10,11 +11,11 @@ const API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || "";
 const alchemyInstances = new Map<number, Alchemy>();
 const publicClients = new Map<number, ReturnType<typeof createPublicClient>>();
 
-const CHAIN_BY_ID: Record<number, typeof mainnet> = {
+const CHAIN_BY_ID: Record<number, Chain> = {
   [mainnet.id]: mainnet,
   [arbitrum.id]: arbitrum,
   [polygon.id]: polygon,
-  [apechain.id]: apechain as typeof mainnet,
+  [apechain.id]: apechain,
 };
 
 // Known spender contracts to scan initially (expand over time)
@@ -249,7 +250,7 @@ export async function fetchTokenApprovals(
             args: [address as `0x${string}`, spender.address as `0x${string}`],
           });
 
-          if (allowance > 0n) {
+          if (allowance > BigInt(0)) {
             const allowanceStr = allowance.toString();
             approvals.push({
               token: tokenAddress,
@@ -418,7 +419,7 @@ export async function fetchApprovalsViaTransfers(
 
       const category = tx.category as (typeof APPROVAL_CATEGORIES)[number];
 
-      if (category === "erc20_approval") {
+      if (category === "erc20") {
         const key = `${tokenAddress.toLowerCase()}-${spender.toLowerCase()}`;
         if (erc20Seen.has(key)) continue;
 
@@ -426,7 +427,7 @@ export async function fetchApprovalsViaTransfers(
           tokenAddress as `0x${string}`,
         );
         const valueHex = tx.rawContract?.value as string | undefined;
-        const value = valueHex ? BigInt(valueHex) : 0n;
+        const value = valueHex ? BigInt(valueHex) : BigInt(0);
         const decimals = metadata.decimals ?? 18;
         const allowanceStr = value.toString();
         erc20Seen.add(key);
@@ -448,8 +449,7 @@ export async function fetchApprovalsViaTransfers(
         if (nftSeen.has(key)) continue;
         nftSeen.add(key);
 
-        const tokenType =
-          category === "erc1155_approval" ? "ERC1155" : "ERC721";
+        const tokenType = category === "erc1155" ? "ERC1155" : "ERC721";
         nft.push({
           contract: tokenAddress,
           tokenType,

@@ -91,7 +91,7 @@ export class ApprovalScanner {
             const maxUint256 = BigInt(
               "115792089237316195423570985008687907853269984665640564039457584007913129639935",
             );
-            isUnlimited = valueBN >= maxUint256 / 2n;
+            isUnlimited = valueBN >= maxUint256 / BigInt(2);
           }
 
           approvals.push({

@@ -119,7 +119,7 @@ export default function CreateProof() {
         name: "SelectiveDisclosureWallet",
         version: "1",
         chainId: SEPOLIA_CHAIN_ID,
-        salt: ethers.id("MyVerifierApp"),
+        salt: ethers.id("MyVerifierApp") as `0x${string}`,
       };
 
       const types = {

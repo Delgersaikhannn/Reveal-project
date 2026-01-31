@@ -36,7 +36,9 @@ export function SelectiveProviders({
         },
         loginMethods: ["wallet", "email"],
         embeddedWallets: {
-          createOnLogin: "users-without-wallets",
+          ethereum: {
+            createOnLogin: "users-without-wallets",
+          },
         },
       }}
     >

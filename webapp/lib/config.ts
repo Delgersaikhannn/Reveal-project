@@ -1,7 +1,7 @@
 import { http, createConfig } from "wagmi";
 import { mainnet, arbitrum, polygon, sepolia } from "wagmi/chains";
 import { injected } from "wagmi/connectors";
-import type { Chain } from "wagmi";
+import type { Chain } from "viem";
 
 // ApeChain (custom) - update RPC via env
 export const apechain: Chain = {
