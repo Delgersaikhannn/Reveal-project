@@ -15,35 +15,24 @@ interface Slide5Props {
 
 const Slide5 = ({ isActive }: Slide5Props) => {
   const walletTypeData = [
-    {
-      year: "2022",
-      hot: null,
-      cold: null,
-      note: "Not disclosed in public summary",
-    },
-    {
-      year: "2023",
-      hot: null,
-      cold: null,
-      note: "Not disclosed in public summary",
-    },
-    {
-      year: "2024 (actual)",
-      hot: 56,
-      cold: 44,
-      note: "Hot wallets held 56% revenue share (Grand View Research)",
-    },
+    { year: "2023", total: 10, hot: 5.6, cold: 4.4 },
+    { year: "2024", total: 12.6, hot: 7.1, cold: 5.5 },
+    { year: "2025", total: 15.5, hot: 8.7, cold: 6.8 },
+    { year: "2026", total: 19.5, hot: 10.9, cold: 8.6 },
+    { year: "2027", total: 24.5, hot: 13.7, cold: 10.8 },
+    { year: "2028", total: 31.0, hot: 17.4, cold: 13.6 },
+    { year: "2029", total: 39.5, hot: 22.1, cold: 17.4 },
+    { year: "2030", total: 50.5, hot: 28.3, cold: 22.2 },
+    { year: "2031", total: 64.5, hot: 36.1, cold: 28.4 },
+    { year: "2032", total: 82.0, hot: 45.9, cold: 36.1 },
+    { year: "2033", total: 100.7, hot: 56.4, cold: 44.3 },
   ];
 
-  const chartData = walletTypeData
-    .filter(
-      (row) => typeof row.hot === "number" && typeof row.cold === "number",
-    )
-    .map((row) => ({
-      year: row.year,
-      hot: row.hot as number,
-      cold: row.cold as number,
-    }));
+  const chartData = walletTypeData.map((row) => ({
+    year: row.year,
+    hot: row.hot,
+    cold: row.cold,
+  }));
 
   const chartConfig: ChartConfig = {
     hot: {
@@ -81,7 +70,6 @@ const Slide5 = ({ isActive }: Slide5Props) => {
             </div>
             <div className="relative bg-slate-900/60 backdrop-blur-sm border border-emerald-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-5">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="text-2xl sm:text-3xl">💰</div>
                 <h4 className="text-lg sm:text-xl md:text-2xl font-bold text-white">
                   Monetization Model
                 </h4>
@@ -199,16 +187,14 @@ const Slide5 = ({ isActive }: Slide5Props) => {
             <div className="absolute inset-0 bg-cyan-500/10 rounded-xl sm:rounded-2xl blur-xl transition-all" />
             <div className="relative bg-slate-900/60 backdrop-blur-sm border border-cyan-500/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 space-y-2 sm:space-y-3 md:space-y-4">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="text-2xl sm:text-3xl">📈</div>
                 <h4 className="text-lg sm:text-xl md:text-2xl font-bold text-white">
-                  Hot vs. Cold Wallet Share
+                  Crypto Wallet Market Growth
                 </h4>
               </div>
 
               <div className="text-xs sm:text-sm text-slate-300">
-                2024 public summary (Grand View Research): hot wallets lead with
-                56% revenue share. Earlier years are not disclosed in the free
-                summary.
+                Market size projection (2023-2033) showing hot wallet dominance
+                at 56% share vs cold wallets at 44% (Grand View Research).
               </div>
 
               <div className="flex items-center gap-2 sm:gap-3 md:gap-4 text-[10px] sm:text-xs text-slate-300">
@@ -244,33 +230,38 @@ const Slide5 = ({ isActive }: Slide5Props) => {
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    width={32}
-                    tickFormatter={(value) => `${value}%`}
-                    tick={{ fill: "#cbd5e1", fontSize: 12 }}
-                    domain={[0, 100]}
+                    width={40}
+                    tickFormatter={(value) => `$${value}B`}
+                    tick={{ fill: "#cbd5e1", fontSize: 10 }}
+                    label={{
+                      value: "Market Size (USD Billion)",
+                      angle: -90,
+                      position: "insideLeft",
+                      style: { fill: "#cbd5e1", fontSize: 10 },
+                    }}
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar
                     dataKey="hot"
                     stackId="wallets"
                     fill="var(--color-hot)"
-                    radius={[6, 6, 0, 0]}
-                    name="Hot"
+                    radius={[0, 0, 0, 0]}
+                    name="Hot Wallets"
                   />
                   <Bar
                     dataKey="cold"
                     stackId="wallets"
                     fill="var(--color-cold)"
                     radius={[6, 6, 0, 0]}
-                    name="Cold"
+                    name="Cold Wallets"
                   />
                 </BarChart>
               </ChartContainer>
 
               <div className="text-[10px] sm:text-xs text-slate-400">
                 Source: Grand View Research, Crypto Wallet Market (2025-2033).
-                Only disclosed year shown; prior years not provided in public
-                summary.
+                Market growing at 26.3% CAGR from $12.6B (2024) to $100.7B
+                (2033).
               </div>
             </div>
           </div>

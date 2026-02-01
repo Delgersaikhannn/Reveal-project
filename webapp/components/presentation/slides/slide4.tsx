@@ -164,7 +164,7 @@ const Slide4 = ({ isActive }: Slide4Props) => {
                 <div className="absolute inset-0 bg-emerald-500/10 rounded-2xl blur-xl transition-all" />
                 <div className="relative bg-slate-900/60 backdrop-blur-sm border border-emerald-500/30 rounded-2xl p-5 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex itemscenter justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
                       <svg
                         className="w-6 h-6 text-emerald-400"
                         fill="none"
@@ -216,7 +216,6 @@ const Slide4 = ({ isActive }: Slide4Props) => {
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-cyan-500/20 to-purple-500/20 rounded-2xl blur-xl" />
           <div className="relative bg-slate-900/80 backdrop-blur-sm border-2 border-cyan-500/50 rounded-2xl p-5">
             <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 text-3xl">🔐</div>
               <div className="space-y-1">
                 <h5 className="text-lg font-bold text-cyan-300">
                   Zero Knowledge About Your Wallet
@@ -233,7 +232,6 @@ const Slide4 = ({ isActive }: Slide4Props) => {
         {/* Bottom Benefits */}
         <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-slate-900/40 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 flex items-start gap-3">
-            <div className="flex-shrink-0 text-2xl">⚡</div>
             <div>
               <p className="text-sm font-semibold text-purple-400 mb-1">
                 Real-time Verification
@@ -246,7 +244,6 @@ const Slide4 = ({ isActive }: Slide4Props) => {
           </div>
 
           <div className="bg-slate-900/40 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 flex items-start gap-3">
-            <div className="flex-shrink-0 text-2xl">🛡️</div>
             <div>
               <p className="text-sm font-semibold text-emerald-400 mb-1">
                 Time-Bounded Security

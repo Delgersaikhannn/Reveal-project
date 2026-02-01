@@ -507,7 +507,7 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
                 value={proofInput}
                 onChange={(e) => setProofInput(e.target.value)}
                 placeholder="Paste proof JSON here..."
-                className="w-full h-32 px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-xl text-white font-mono text-xs"
+                className="w-full h-32 px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-xl text-white font-mono text-xs min-h-100"
               />
               <button
                 onClick={verifyProof}
