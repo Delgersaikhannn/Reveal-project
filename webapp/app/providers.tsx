@@ -6,7 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { config } from "@/lib/config";
 import { useState } from "react";
 
-const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "";
+const privyAppId =
+  process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cmkr1yizi009uky0c9zanznhg";
 
 export function SelectiveProviders({
   children,
