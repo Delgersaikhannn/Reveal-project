@@ -352,7 +352,7 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
               {claimType && (
                 <button
                   onClick={handleGenerateProof}
-                  disabled={isGenerating || !isConnected}
+                  disabled={isGenerating}
                   className="w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold text-white disabled:opacity-50"
                 >
                   {isGenerating
