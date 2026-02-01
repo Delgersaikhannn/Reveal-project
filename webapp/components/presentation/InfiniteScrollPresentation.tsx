@@ -150,7 +150,9 @@ export default function InfiniteScrollPresentation() {
             {/* <h2 className="text-5xl md:text-xl font-bold text-white absolute left-4 top-4">
               {section.title}
             </h2> */}
-            {section.content && <section.content />}
+            {section.content && (
+              <section.content isActive={index === currentSlide} />
+            )}
             {/* Background gradient effect */}
             {/* <div
               className={`absolute inset-0 bg-gradient-to-br ${section.gradient} opacity-10 blur-3xl`}

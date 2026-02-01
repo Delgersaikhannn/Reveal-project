@@ -27,7 +27,7 @@ const Slide0 = ({ isActive }: Slide0Props) => {
       </Suspense>
 
       <div className="text-white pt-4 text-lg font-medium opacity-60">
-        Identity privacy protocol.
+        prove what matters, without revealing who you are.
       </div>
     </div>
   );

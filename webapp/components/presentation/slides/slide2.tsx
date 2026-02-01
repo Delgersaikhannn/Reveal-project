@@ -57,7 +57,7 @@ const Slide2 = ({ isActive }: Slide2Props) => {
 
       if (isActive && !hasAnimated.current) {
         // Set initial state for all cards
-        cards.forEach(card => {
+        cards.forEach((card) => {
           gsap.set(card, { opacity: 0, y: 30 });
         });
 
@@ -68,14 +68,14 @@ const Slide2 = ({ isActive }: Slide2Props) => {
             y: 0,
             duration: 0.5,
             ease: "power2.out",
-            delay: 0.5 + (index * 0.3), // Each card waits 0.3s longer than previous
+            delay: 0.5 + index * 0.3, // Each card waits 0.3s longer than previous
           });
         });
-        
+
         hasAnimated.current = true;
       } else if (!isActive && hasAnimated.current) {
         // Reset when slide becomes inactive
-        cards.forEach(card => {
+        cards.forEach((card) => {
           gsap.set(card, { opacity: 0, y: 30 });
         });
         hasAnimated.current = false;
@@ -384,11 +384,12 @@ const Slide2 = ({ isActive }: Slide2Props) => {
         </div>
 
     
+       */}
         <div className="text-center pt-4">
           <p className="text-2xl text-rose-400 font-semibold">
             There has to be a better way...
           </p>
-        </div> */}
+        </div>
       </div>
     </div>
   );
