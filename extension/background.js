@@ -151,7 +151,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             },
             args: [proof],
           },
-          () => {
+    () => {
             const err = chrome.runtime.lastError;
             done(!err);
           },

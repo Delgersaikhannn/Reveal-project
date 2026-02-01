@@ -7,49 +7,71 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      width: 320px;
+      width: 340px;
+      min-height: 400px;
       padding: 16px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #fff;
-      color: #1f2937;
+      background: #f5f5f5;
+      color: #18181b;
     }
-    h1 { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #111827; }
-    h2 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #374151; }
-    .screen { display: none; }
+    .screen {
+      display: none;
+      background: #fff;
+      color: #18181b;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
     .screen.active { display: block; }
+    h1 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #18181b;
+      letter-spacing: -0.02em;
+    }
+    h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #3f3f46; }
     .proof-list { list-style: none; }
     .proof-item {
-      padding: 10px 12px;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      margin-bottom: 8px;
+      background: #fafafa;
+      border: 1px solid #e4e4e7;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .proof-item:hover { background: #f3f4f6; }
-    .proof-item.expanded { background: #f3f4f6; border-color: #d1d5db; }
+    .proof-item:hover { border-color: #d4d4d8; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .proof-item.expanded { border-color: #a1a1aa; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
     .proof-item-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 12px;
+      padding: 14px 16px;
     }
-    .proof-item-content {
-      flex: 1;
+    .proof-item-content { flex: 1; min-width: 0; }
+    .proof-type {
+      font-size: 14px;
+      font-weight: 600;
+      color: #18181b;
+      letter-spacing: -0.01em;
     }
-    .proof-type { font-size: 14px; font-weight: 500; color: #111827; }
-    .proof-ttl { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .proof-ttl {
+      font-size: 12px;
+      color: #71717a;
+      margin-top: 4px;
+    }
     .proof-delete-icon {
-      width: 24px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
       border: none;
       background: transparent;
-      color: #9ca3af;
-      font-size: 24px;
+      color: #a1a1aa;
+      font-size: 20px;
       line-height: 1;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 6px;
       padding: 0;
       display: flex;
       align-items: center;
@@ -58,92 +80,245 @@
     }
     .proof-delete-icon:hover {
       background: #fef2f2;
-      color: #dc2626;
+      color: #b91c1c;
     }
     .proof-detail {
-      margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;
-      font-size: 12px; color: #4b5563;
+      margin: 0 16px 16px;
+      padding: 14px 0 0;
+      border-top: 1px solid #e4e4e7;
+      font-size: 12px;
+      color: #52525b;
     }
-    .proof-detail-row { margin-bottom: 4px; }
-    .proof-detail-label { color: #6b7280; }
+    .proof-detail-row { margin-bottom: 6px; }
+    .proof-detail-label {
+      color: #71717a;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 2px;
+    }
     .add-new {
-      margin-top: 12px; padding: 12px; text-align: center;
-      background: #eff6ff; border: 1px dashed #3b82f6; border-radius: 8px;
-      cursor: pointer; font-size: 14px; font-weight: 500; color: #2563eb;
-      transition: background 0.15s;
+      margin-top: 14px;
+      padding: 16px;
+      text-align: center;
+      background: transparent;
+      border: 1px dashed #a1a1aa;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #71717a;
+      transition: border-color 0.15s, color 0.15s;
     }
-    .add-new:hover { background: #dbeafe; }
-    .wallet-list { list-style: none; margin-bottom: 12px; }
+    .add-new:hover {
+      border-color: #52525b;
+      color: #18181b;
+    }
+    .wallet-list { list-style: none; margin-bottom: 16px; }
     .wallet-item {
-      padding: 10px 12px;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 16px;
+      background: #fafafa;
+      border: 1px solid #e4e4e7;
+      border-radius: 12px;
+      margin-bottom: 8px;
       cursor: pointer;
       font-size: 13px;
       font-family: ui-monospace, monospace;
+      transition: border-color 0.15s;
     }
-    .wallet-item:hover { background: #f3f4f6; }
-    .wallet-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .wallet-item-address { flex: 1; }
-    .wallet-delete { padding: 4px 8px; font-size: 12px; color: #6b7280; background: transparent; border: none; border-radius: 4px; cursor: pointer; }
-    .wallet-delete:hover { color: #dc2626; background: #fef2f2; }
+    .wallet-item:hover { border-color: #d4d4d8; }
+    .wallet-item.selected { border-color: #18181b; background: #f4f4f5; }
+    .wallet-item-address { flex: 1; color: #18181b; font-weight: 500; }
+    .wallet-delete {
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #71717a;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .wallet-delete:hover { color: #b91c1c; background: #fef2f2; }
     .btn {
-      width: 100%; padding: 10px 12px; border: none; border-radius: 8px;
-      font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 6px;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
     }
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-primary:hover { background: #2563eb; }
-    .btn-secondary { background: #e5e7eb; color: #374151; }
-    .btn-secondary:hover { background: #d1d5db; }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .error { font-size: 12px; color: #dc2626; margin-top: 8px; }
-    .hint { font-size: 12px; color: #6b7280; margin-top: 8px; }
-    .claim-option {
-      padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb;
-      border-radius: 8px; margin-bottom: 8px; cursor: pointer;
-      font-size: 14px; font-weight: 500;
+    .btn-primary {
+      background: #18181b;
+      color: #fff;
     }
-    .claim-option:hover { background: #f3f4f6; }
-    .claim-type-grid { display: flex; flex-direction: column; gap: 8px; }
+    .btn-primary:hover { background: #27272a; }
+    .btn-secondary {
+      background: transparent;
+      color: #52525b;
+      border: 1px solid #d4d4d8;
+    }
+    .btn-secondary:hover { background: #f4f4f5; color: #18181b; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .error { font-size: 12px; color: #b91c1c; margin-top: 8px; }
+    .hint { font-size: 12px; color: #71717a; margin-top: 8px; line-height: 1.4; }
+    .claim-type-grid { display: flex; flex-direction: column; gap: 10px; }
     .claim-type-option {
-      display: flex; align-items: center; gap: 12px; padding: 12px;
-      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
-      cursor: pointer; font-size: 14px; font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: #fafafa;
+      border: 1px solid #e4e4e7;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #18181b;
+      transition: border-color 0.15s;
     }
-    .claim-type-option:hover { background: #f3f4f6; }
-    .claim-type-option .icon-wrap { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .claim-type-option:hover { border-color: #d4d4d8; }
+    .claim-type-option .icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
     .dao-grid { display: flex; flex-direction: column; gap: 8px; }
     .dao-option {
-      display: flex; align-items: center; gap: 12px; padding: 12px;
-      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
-      cursor: pointer; font-size: 14px; font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: #fafafa;
+      border: 1px solid #e4e4e7;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #18181b;
+      transition: border-color 0.15s;
     }
-    .dao-option:hover { background: #f3f4f6; }
-    .dao-option .dao-icon { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-    .dao-option .dao-icon-fallback { width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex-shrink: 0; }
+    .dao-option:hover { border-color: #d4d4d8; }
+    .dao-option .dao-icon, .dao-option .dao-icon-fallback {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .dao-option .dao-icon-fallback {
+      background: #e4e4e7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 600;
+    }
     .step2-panel { display: none; }
     .step2-panel.active { display: block; }
-    .step2-back-link { font-size: 13px; color: #6b7280; cursor: pointer; margin-bottom: 10px; }
-    .step2-back-link:hover { color: #111827; }
+    .step2-back-link {
+      font-size: 13px;
+      color: #71717a;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .step2-back-link:hover { color: #18181b; }
+    .screen-logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .screen-logo img {
+      width: 48px;
+      height: 48px;
+      display: block;
+      margin: 0 auto;
+    }
+    body.site-request-active {
+      background: #0a0a0a;
+      padding: 0;
+    }
+    body.site-request-active #screenSiteRequest {
+      background: #0a0a0a;
+      box-shadow: none;
+      min-height: 380px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-radius: 0;
+    }
+    body.site-request-active #screenSiteRequest .screen-logo {
+      margin-bottom: 28px;
+    }
+    body.site-request-active #screenSiteRequest .screen-logo img {
+      width: 80px;
+      height: 80px;
+    }
+    .screen-site-request h1 {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.45;
+      margin-bottom: 10px;
+      color: #fafafa;
+    }
+    .screen-site-request .site-request-hint {
+      margin-bottom: 28px;
+      margin-top: 0;
+      color: #a1a1aa;
+    }
+    .screen-site-request .btn-primary {
+      margin-top: 0;
+      background: #fff;
+      color: #0a0a0a;
+    }
+    .screen-site-request .btn-primary:hover {
+      background: #e4e4e7;
+    }
+    .screen-site-request .btn-secondary {
+      margin-top: 12px;
+      background: transparent;
+      color: #a1a1aa;
+      border-color: #52525b;
+    }
+    .screen-site-request .btn-secondary:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fafafa;
+      border-color: #71717a;
+    }
   </style>
 </head>
 <body>
-  <div id="screenSiteRequest" class="screen">
-    <h1 id="siteRequestTitle">Devfolio needs proof of ETH Chiang Mai POAP.</h1>
-    <p class="hint" id="siteRequestHint" style="margin-bottom: 12px;">Connect wallet to continue.</p>
+  <div id="screenSiteRequest" class="screen screen-site-request">
+    <div class="screen-logo">
+      <img src="../assets/reveal-logo.png" alt="Reveal" />
+    </div>
+    <h1 id="siteRequestTitle">Devfolio needs proof of ETH Chiang Mai POAP</h1>
+    <p class="hint site-request-hint" id="siteRequestHint">Connect wallet to continue</p>
     <button class="btn btn-primary" id="siteRequestConnect">Connect wallet</button>
-    <button class="btn btn-secondary" id="siteRequestCancel" style="margin-top: 8px;">Cancel</button>
+    <button class="btn btn-secondary" id="siteRequestCancel">Cancel</button>
   </div>
 
   <div id="screenMain" class="screen active">
+    <div class="screen-logo">
+      <img src="../assets/reveal-logo.png" alt="Reveal" />
+    </div>
     <h1>What do you want to prove?</h1>
     <ul class="proof-list" id="proofList"></ul>
     <div class="add-new" id="addNewProof">+ Add new proof</div>
   </div>
 
   <div id="screenSignProof" class="screen">
+    <div class="screen-logo">
+      <img src="../assets/reveal-logo.png" alt="Reveal" />
+    </div>
     <h1>Verified</h1>
     <div id="signProofImageWrap" style="display: none; margin: 12px auto; text-align: center;">
       <img id="signProofImage" src="" alt="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" />
@@ -156,15 +331,21 @@
   </div>
 
   <div id="screenAddStep1" class="screen">
-    <h1>Connect to your wallet or select one</h1>
+    <div class="screen-logo">
+      <img src="../assets/reveal-logo.png" alt="Reveal" />
+    </div>
+    <h1>Choose wallet</h1>
     <ul class="wallet-list" id="savedWalletList"></ul>
+    <p class="hint" id="step1Hint" style="margin-bottom: 12px;">Approve the connection and sign the message in MetaMask to prove you control the wallet.</p>
     <button class="btn btn-primary" id="connectNewWallet">Connect new wallet</button>
     <p class="error" id="step1Error" style="display: none;"></p>
-    <p class="hint" id="step1Hint">Approve the connection and sign the message in MetaMask to prove you control the wallet.</p>
-    <button class="btn btn-secondary" id="backFromStep1" style="margin-top: 12px;">Back</button>
+    <button class="btn btn-secondary" id="backFromStep1">Back</button>
   </div>
 
   <div id="screenAddStep2" class="screen">
+    <div class="screen-logo">
+      <img src="../assets/reveal-logo.png" alt="Reveal" />
+    </div>
     <h1 id="step2Title">What to prove?</h1>
     <p class="hint" id="selectedAddressLabel" style="margin-bottom: 12px;"></p>
 

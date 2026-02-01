@@ -28,6 +28,7 @@ function showScreen(id) {
   document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
   const el = document.getElementById(id);
   if (el) el.classList.add("active");
+  document.body.classList.toggle("site-request-active", id === "screenSiteRequest");
 }
 
 function renderProofs(proofs) {
@@ -149,7 +150,11 @@ function refreshWalletList() {
         li.dataset.address = address;
         const addrEl = li.querySelector(".wallet-item-address");
         const delBtn = li.querySelector(".wallet-delete");
-        addrEl.addEventListener("click", () => selectSavedAddress(address));
+        addrEl.addEventListener("click", () => {
+          list.querySelectorAll(".wallet-item").forEach((el) => el.classList.remove("selected"));
+          li.classList.add("selected");
+          selectSavedAddress(address);
+        });
         delBtn.addEventListener("click", (e) => {
           e.stopPropagation();
           deleteWallet(address, () => refreshWalletList());
@@ -200,7 +205,7 @@ function connectNewWallet() {
         chainId: nft.chainId,
         proofLabel: `NFT Holder (${nft.name})`,
       });
-    } else {
+  } else {
       showScreen("screenAddStep2");
     }
   });
@@ -434,7 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pending && pending.siteName && pending.requiredProof) {
       pendingSiteRequest = pending;
       showSiteRequest(pending.siteName, pending.requiredProof);
-    } else {
+      } else {
       showScreen("screenMain");
     }
   });
