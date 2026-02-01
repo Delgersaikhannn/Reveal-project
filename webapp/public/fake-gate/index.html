@@ -305,15 +305,177 @@
     .no-wallet:hover {
       color: #374151;
     }
+
+    /* Gated content – ETHChiangmai Hackathon clone */
+    .gated-wrapper {
+      display: none;
+      position: fixed;
+      inset: 0;
+      overflow-y: auto;
+      background: #fff;
+      flex-direction: column;
+    }
+    .gated-wrapper.visible {
+      display: flex;
+    }
+    .gated-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 40px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #fff;
+    }
+    .gated-header-left {
+      display: flex;
+      align-items: center;
+      gap: 40px;
+    }
+    .gated-header .devfolio-logo img {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+    .gated-nav {
+      display: flex;
+      gap: 24px;
+    }
+    .gated-nav a {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2C3E50;
+      text-decoration: none;
+    }
+    .gated-nav a:hover {
+      color: #3b82f6;
+    }
+    .gated-header-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .gated-header-right img.bell-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0.75;
+    }
+    .gated-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .gated-user img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+    .gated-user span {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .gated-main {
+      flex: 1;
+      padding: 40px 48px 48px;
+      max-width: 1120px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .gated-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .gated-title img.eth-logo {
+      width: 44px;
+      height: 44px;
+    }
+    .gated-title h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #111827;
+      letter-spacing: -0.02em;
+    }
+    .gated-tabs-wrap {
+      margin-bottom: 28px;
+    }
+    .gated-tabs-wrap img {
+      width: 100%;
+      max-width: 580px;
+      height: auto;
+      display: block;
+    }
+    .gated-content {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .gated-content { grid-template-columns: 1fr; }
+    }
+    .gated-poster {
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+    .gated-poster img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .gated-sidebar {
+      background: #fff;
+      border: 1px solid #e8eaf0;
+      border-radius: 14px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .gated-sidebar img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
   </style>
 </head>
 <body>
-  <div class="card" id="cardGated" style="display: none;">
-    <div class="sign-in-header">
-      <h1>Access Granted</h1>
-      <p style="font-size: 13px; color: #6b7280; margin-top: 4px;">You have verified your ETH Chiang Mai POAP</p>
-    </div>
-    <p style="font-size: 15px; color: #374151; margin-top: 24px;">Welcome to the gated content! 🎉</p>
+  <div class="gated-wrapper" id="cardGated">
+    <header class="gated-header">
+      <div class="gated-header-left">
+        <a href="#" class="devfolio-logo">
+          <img src="images/devfolio-white-bg.png" alt="Devfolio" />
+        </a>
+        <nav class="gated-nav">
+          <a href="#">Home</a>
+          <a href="#">Blog</a>
+        </nav>
+      </div>
+      <div class="gated-header-right">
+        <img src="images/bell.png" alt="" class="bell-icon" aria-hidden="true" />
+        <div class="gated-user">
+          <img src="images/user-icon.png" alt="" />
+          <span>hudlerr</span>
+        </div>
+      </div>
+    </header>
+    <main class="gated-main">
+      <div class="gated-title">
+        <img src="images/eth.png" alt="" class="eth-logo" aria-hidden="true" />
+        <h1>ETHChiangmai Hackathon 2026</h1>
+      </div>
+      <div class="gated-tabs-wrap">
+        <img src="images/options.png" alt="Overview, Prizes, Schedule, Projects, Dashboard" />
+      </div>
+      <div class="gated-content">
+        <div class="gated-poster">
+          <img src="images/poster.png" alt="ETHChiangmai Hackathon – Jan 28 - Feb 3, Chiang Mai, Thailand" />
+        </div>
+        <aside class="gated-sidebar">
+          <img src="images/right-info.png" alt="Event details: Jan 28 - Feb 2, 2026, Chiang Mai, Thailand. Applications closed. Hackathon is live. Go to dashboard." />
+        </aside>
+      </div>
+    </main>
   </div>
 
   <div class="page-header">
@@ -472,7 +634,7 @@
     document.addEventListener('reveal-proof-received', (e) => {
       const proof = e.detail;
       if (!proof) return;
-      cardGated.style.display = 'none';
+      cardGated.classList.remove('visible');
       cardConnect.classList.add('verifying-hidden');
       cardConnect.style.display = 'none';
       cardVerifying.classList.add('visible');
@@ -505,14 +667,16 @@
     function showGated() {
       cardConnect.style.display = 'none';
       cardVerifying.style.display = 'none';
-      cardGated.style.display = 'block';
+      document.querySelector('.page-header').style.display = 'none';
+      cardGated.classList.add('visible');
     }
     function showConnect() {
       cardConnect.classList.remove('verifying-hidden');
       cardConnect.style.display = 'block';
       cardVerifying.classList.remove('visible');
       cardVerifying.style.display = 'none';
-      cardGated.style.display = 'none';
+      document.querySelector('.page-header').style.display = 'flex';
+      cardGated.classList.remove('visible');
     }
     function checkHash() {
       if (window.location.hash === '#gated') showGated();
