@@ -8,6 +8,7 @@
 
 const STORAGE_KEY_ADDRESSES = "selective_disclosure_saved_addresses";
 const STORAGE_KEY_PROOFS = "selective_disclosure_proofs";
+const STORAGE_KEY_PENDING_SITE = "reveal_pending_site_request";
 
 // ERC20DAOClaimModule: verify(address user, bytes calldata data) where data = abi.encode(token, minBalance)
 const ERC20_CLAIM_MODULE = {
@@ -27,6 +28,10 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "OPEN_POPUP") {
+    const { siteName, requiredProof } = message;
+    const tabId = sender?.tab?.id ?? null;
+    const pending = { siteName: siteName || "This site", requiredProof: requiredProof || "proof", tabId, at: Date.now() };
+    chrome.storage.local.set({ [STORAGE_KEY_PENDING_SITE]: pending });
     chrome.action
       .openPopup()
       .then(() => sendResponse({ ok: true }))
@@ -35,6 +40,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ ok: true });
       });
     return true;
+  }
+
+  if (message.type === "GET_PENDING_SITE") {
+    chrome.storage.local.get([STORAGE_KEY_PENDING_SITE], (r) => {
+      sendResponse({ pending: r[STORAGE_KEY_PENDING_SITE] || null });
+    });
+    return true;
+  }
+
+  if (message.type === "CLEAR_PENDING_SITE") {
+    chrome.storage.local.remove(STORAGE_KEY_PENDING_SITE);
+    sendResponse({ ok: true });
+    return false;
   }
 
   if (message.type === "GET_SAVED_ADDRESSES") {
@@ -61,6 +79,50 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     chrome.storage.local.set({ [STORAGE_KEY_PROOFS]: proofs });
     sendResponse({ ok: true });
+    return true;
+  }
+
+  if (message.type === "SIGN_PROOF") {
+    const { address, proofLabel } = message;
+    if (!address || !proofLabel) {
+      sendResponse({ ok: false, error: "Missing address or proof label." });
+      return false;
+    }
+    chrome.storage.local.get([STORAGE_KEY_PENDING_SITE], (storage) => {
+      const pending = storage[STORAGE_KEY_PENDING_SITE];
+      const preferredTabId = pending?.tabId ?? null;
+      const resolveTab = (cb) => {
+        if (preferredTabId) {
+          chrome.tabs.get(preferredTabId, (tab) => {
+            if (!chrome.runtime.lastError && tab?.url && (tab.url.startsWith("http://") || tab.url.startsWith("https://"))) {
+              cb(tab);
+            } else {
+              chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => cb(tabs[0]));
+            }
+          });
+        } else {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => cb(tabs[0]));
+        }
+      };
+      resolveTab((tab) => {
+        if (!tab?.id || !tab.url || tab.url.startsWith("chrome-extension://")) {
+          sendResponse({ ok: false, error: "Keep the site that requested proof open and try again." });
+          return;
+        }
+        chrome.scripting.executeScript(
+          { target: { tabId: tab.id }, world: "MAIN", func: signProofInPage, args: [address, proofLabel] },
+          (results) => {
+            if (chrome.runtime.lastError) {
+              sendResponse({ ok: false, error: chrome.runtime.lastError.message || "Could not sign." });
+              return;
+            }
+            const r = results?.[0]?.result;
+            if (r?.error) sendResponse({ ok: false, error: r.error });
+            else sendResponse({ ok: true });
+          },
+        );
+      });
+    });
     return true;
   }
 
@@ -99,25 +161,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "CONNECT_NEW_WALLET") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs[0];
-      if (!tab?.id || !tab.url) {
-        sendResponse({ ok: false, error: "No active tab." });
-        return;
-      }
-      const url = tab.url;
-      if (
-        url.startsWith("chrome://") ||
-        url.startsWith("edge://") ||
-        url.startsWith("about:")
-      ) {
-        sendResponse({
-          ok: false,
-          error:
-            "Open a normal website (e.g. google.com or any dApp), then try again.",
-        });
-        return;
-      }
+    chrome.storage.local.get([STORAGE_KEY_PENDING_SITE], (storage) => {
+      const pending = storage[STORAGE_KEY_PENDING_SITE];
+      const preferredTabId = pending?.tabId ?? null;
+
+      const resolveTab = (cb) => {
+        if (preferredTabId) {
+          chrome.tabs.get(preferredTabId, (tab) => {
+            if (!chrome.runtime.lastError && tab?.url && (tab.url.startsWith("http://") || tab.url.startsWith("https://"))) {
+              cb(tab);
+            } else {
+              chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => cb(tabs[0]));
+            }
+          });
+        } else {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => cb(tabs[0]));
+        }
+      };
+
+      resolveTab((tab) => {
+        if (!tab?.id || !tab.url) {
+          sendResponse({ ok: false, error: "No active tab." });
+          return;
+        }
+        const url = tab.url;
+        if (
+          url.startsWith("chrome://") ||
+          url.startsWith("edge://") ||
+          url.startsWith("about:") ||
+          url.startsWith("chrome-extension://")
+        ) {
+          sendResponse({
+            ok: false,
+            error:
+              "Keep the site that requested proof (e.g. localhost) open and try again.",
+          });
+          return;
+        }
 
       // Run in the PAGE's JavaScript context (same as any webpage) so we see window.ethereum
       chrome.scripting.executeScript(
@@ -148,6 +228,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
         },
       );
+      });
     });
     return true;
   }
@@ -160,12 +241,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     const minWei = (minBalanceWei ?? "0").toString();
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs[0];
-      if (!tab?.id || !tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("edge://") || tab.url.startsWith("about:")) {
-        sendResponse({ ok: false, error: "Open a normal website and try again." });
-        return;
-      }
+    chrome.storage.local.get([STORAGE_KEY_PENDING_SITE], (storage) => {
+      const pending = storage[STORAGE_KEY_PENDING_SITE];
+      const preferredTabId = pending?.tabId ?? null;
+
+      const resolveTab = (cb) => {
+        if (preferredTabId) {
+          chrome.tabs.get(preferredTabId, (tab) => {
+            if (!chrome.runtime.lastError && tab?.url && (tab.url.startsWith("http://") || tab.url.startsWith("https://"))) {
+              cb(tab);
+            } else {
+              chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                cb(tabs[0]);
+              });
+            }
+          });
+        } else {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            cb(tabs[0]);
+          });
+        }
+      };
+
+      resolveTab((tab) => {
+        if (!tab?.id || !tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("edge://") || tab.url.startsWith("about:") || tab.url.startsWith("chrome-extension://")) {
+          sendResponse({ ok: false, error: "Open the site that requested proof (e.g. localhost) and try again." });
+          return;
+        }
       let origin = null;
       try {
         if (tab.url && (tab.url.startsWith("http://") || tab.url.startsWith("https://"))) {
@@ -279,6 +381,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ ok: true, verified: !!r?.verified, origin });
         }
       );
+      });
     });
     return true;
   }
@@ -292,7 +395,7 @@ function buildVerifyCalldataForNFT(userAddress, nftContractAddress) {
   const user = (userAddress || "").replace(/^0x/, "").toLowerCase();
   const nft = (nftContractAddress || "").replace(/^0x/, "").toLowerCase();
   if (user.length !== 40 || nft.length !== 40) return null;
-  const selector = (ERC721_CLAIM_MODULE.verifySelector || "").replace(/^0x/, "");
+  const selector = (ERC20_CLAIM_MODULE.verifySelector || "").replace(/^0x/, "");
   if (selector.length !== 8) return null;
   const offset = "0000000000000000000000000000000000000000000000000000000000000040";
   const length = "0000000000000000000000000000000000000000000000000000000000000020";
@@ -425,8 +528,9 @@ function buildAndCallVerifyInPage(contractAddress, userAddress, tokenAddress, mi
 }
 
 /**
- * Runs in the page context. Switches to chainId, then calls contract. For POAP on Gnosis.
+ * Runs in the page context. Switches to chainId, then calls contract. For POAP on Gnosis / NFT on Sepolia.
  * args: [chainId, contractAddress, calldataHex].
+ * Inlined eth_call logic – injected functions cannot reference other background functions.
  */
 function switchChainAndCallContractInPage(chainId, contractAddress, calldataHex) {
   return new Promise((resolve) => {
@@ -440,16 +544,31 @@ function switchChainAndCallContractInPage(chainId, contractAddress, calldataHex)
       resolve({ error: "Wallet not ready." });
       return;
     }
+    const doCall = () => {
+      const data = (calldataHex || "").replace(/^0x/, "");
+      if (!data) return Promise.resolve({ error: "Invalid calldata." });
+      return provider
+        .request({ method: "eth_call", params: [{ to: contractAddress, data: "0x" + data }] })
+        .then((result) => {
+          if (result == null || result === "0x") return { verified: false };
+          const hex = String(result).replace(/^0x/, "").padStart(64, "0").slice(-64);
+          const verified = hex.slice(-2) !== "00" && parseInt(hex.slice(-2), 16) !== 0;
+          return { verified };
+        })
+        .catch((err) => {
+          const msg = err?.message || "Contract call failed.";
+          const data = err?.data || err?.error?.data;
+          return { error: data ? `${msg} (revert data: ${data})` : msg };
+        });
+    };
     const chainIdHex = "0x" + parseInt(chainId, 10).toString(16);
     provider
       .request({ method: "wallet_switchEthereumChain", params: [{ chainId: chainIdHex }] })
-      .then(() => {
-        return callContractInPage(contractAddress, calldataHex);
-      })
+      .then(doCall)
       .then((r) => resolve(r))
       .catch((err) => {
         if (err?.code === 4902) {
-          resolve({ error: "Please add Gnosis network to your wallet first." });
+          resolve({ error: "Please add this network to your wallet first." });
         } else {
           resolve({ error: err?.message || "Chain switch or call failed." });
         }
@@ -498,6 +617,31 @@ function callContractInPage(contractAddress, calldataHex) {
         const fullError = data ? `${msg} (revert data: ${data})` : msg;
         resolve({ error: fullError });
       });
+  });
+}
+
+/**
+ * Runs in the page context (world: MAIN). Signs a proof message via personal_sign.
+ * args: [address, proofLabel].
+ */
+function signProofInPage(address, proofLabel) {
+  return new Promise((resolve) => {
+    const w = typeof window !== "undefined" ? window : null;
+    if (!w || !w.ethereum) {
+      resolve({ error: "No wallet on this page." });
+      return;
+    }
+    const provider = Array.isArray(w.ethereum) ? w.ethereum[0] : w.ethereum;
+    if (!provider || typeof provider.request !== "function") {
+      resolve({ error: "Wallet not ready." });
+      return;
+    }
+    const msg = `Proof: I hold ${proofLabel}.\nFor selective disclosure.\nTimestamp: ${Date.now()}`;
+    const hexMsg = "0x" + Array.from(new TextEncoder().encode(msg)).map((b) => b.toString(16).padStart(2, "0")).join("");
+    provider
+      .request({ method: "personal_sign", params: [hexMsg, address] })
+      .then(() => resolve({ ok: true }))
+      .catch((err) => resolve({ error: err?.message || "Signature rejected." }));
   });
 }
 

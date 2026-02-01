@@ -55,6 +55,18 @@ function renderProofs(proofs) {
   });
 }
 
+// --- Site request (opened from gated page) ---
+let pendingSiteRequest = null;
+
+// --- Sign proof (after verification succeeds) ---
+let pendingVerifiedClaim = null;
+
+function showSiteRequest(siteName, requiredProof) {
+  document.getElementById("siteRequestTitle").textContent = `${siteName} needs proof of ${requiredProof}.`;
+  document.getElementById("siteRequestHint").textContent = "Connect wallet to continue.";
+  showScreen("screenSiteRequest");
+}
+
 // --- Add new proof: Step 1 (connect or select) ---
 let selectedAddress = null;
 let proofs = [];
@@ -70,7 +82,18 @@ function openAddStep1() {
 function selectSavedAddress(address) {
   selectedAddress = address;
   document.getElementById("selectedAddressLabel").textContent = "Wallet: " + shortenAddress(address);
-  showScreen("screenAddStep2");
+  const nft = pendingSiteRequest ? nftOptionForRequiredProof(pendingSiteRequest.requiredProof) : null;
+  if (nft) {
+    showScreen("screenAddStep2");
+    runVerify({
+      assetType: "nft",
+      nftContractAddress: nft.nftContract,
+      chainId: nft.chainId,
+      proofLabel: `NFT Holder (${nft.name})`,
+    });
+  } else {
+    showScreen("screenAddStep2");
+  }
 }
 
 function deleteWallet(address, onDone) {
@@ -136,7 +159,18 @@ function connectNewWallet() {
     chrome.runtime.sendMessage({ type: "SAVE_ADDRESS", address }, () => {});
     selectedAddress = address;
     document.getElementById("selectedAddressLabel").textContent = "Wallet: " + shortenAddress(address);
-    showScreen("screenAddStep2");
+    const nft = pendingSiteRequest ? nftOptionForRequiredProof(pendingSiteRequest.requiredProof) : null;
+    if (nft) {
+      showScreen("screenAddStep2");
+      runVerify({
+        assetType: "nft",
+        nftContractAddress: nft.nftContract,
+        chainId: nft.chainId,
+        proofLabel: `NFT Holder (${nft.name})`,
+      });
+    } else {
+      showScreen("screenAddStep2");
+    }
   });
 }
 
@@ -149,9 +183,15 @@ const DAO_OPTIONS = [
 
 // NFT collections. POAP contract same on Ethereum/Gnosis; user must be on Gnosis (100) for POAP.
 const NFT_OPTIONS = [
-  { id: "eth-chiangmai-poap", name: "ETH Chiang Mai POAP", nftContract: "0x22C1f6050E56d2876009903609a2cC3fEf83B415", chainId: 100, fallback: "🎫" },
+  //TODO: tmp use test nft on sepolia
+  { id: "eth-chiangmai-poap", name: "ETH Chiang Mai POAP", nftContract: "0xD5Babab921A9167ABBf7f093FD6969A86eA4EAa8", chainId: 11155111, fallback: "🎫" },
+  // { id: "eth-chiangmai-poap", name: "ETH Chiang Mai POAP", nftContract: "0x22C1f6050E56d2876009903609a2cC3fEf83B415", chainId: 100, fallback: "🎫" },
   { id: "sepolia-nft", name: "Sepolia NFT (test)", nftContract: "0xd5babab921a9167abbf7f093fd6969a86ea4eaa8", chainId: 11155111, fallback: "🖼" },
 ];
+
+function nftOptionForRequiredProof(requiredProof) {
+  return NFT_OPTIONS.find((n) => n.name === requiredProof) || null;
+}
 
 // Token Holder asset options
 const ASSET_OPTIONS = {
@@ -241,10 +281,26 @@ function onVerifyToken() {
 function runVerify({ assetType, tokenAddress, nftContractAddress, chainId, proofLabel }) {
   const errEl = document.getElementById("step2Error");
   const hintEl = document.getElementById("step2Hint");
+  const titleEl = document.getElementById("step2Title");
+  const verifyingPanel = document.getElementById("step2PanelVerifying");
+  const verifyingLabel = document.getElementById("step2VerifyingLabel");
+  const choicePanel = document.getElementById("step2PanelChoice");
   errEl.style.display = "none";
   errEl.textContent = "";
   hintEl.style.display = "block";
   hintEl.textContent = "Checking…";
+  if (pendingSiteRequest) {
+    titleEl.textContent = "Verifying proof";
+    verifyingLabel.textContent = `Verifying ${proofLabel}…`;
+    const metaMaskHint = document.getElementById("step2VerifyingMetaMask");
+    if (metaMaskHint) metaMaskHint.style.display = chainId ? "block" : "none";
+    document.querySelectorAll("#screenAddStep2 .step2-panel").forEach((p) => p.classList.remove("active"));
+    verifyingPanel.classList.add("active");
+  } else {
+    titleEl.textContent = "What to prove?";
+    document.querySelectorAll("#screenAddStep2 .step2-panel").forEach((p) => p.classList.remove("active"));
+    if (choicePanel) choicePanel.classList.add("active");
+  }
 
   const payload = {
     type: "CHECK_CLAIM",
@@ -279,28 +335,91 @@ function runVerify({ assetType, tokenAddress, nftContractAddress, chainId, proof
         errEl.style.display = "block";
         return;
       }
-      const sharedWith = res.origin ? [res.origin] : [];
+      pendingVerifiedClaim = { proofLabel, origin: res.origin };
+      showSignProof(proofLabel);
+    }
+  );
+}
+
+function showSignProof(proofLabel) {
+  document.getElementById("signProofClaim").textContent = `You have ${proofLabel}.`;
+  document.getElementById("signProofHint").textContent = "Sign to generate proof that you can share with the site.";
+  document.getElementById("signProofError").style.display = "none";
+  document.getElementById("signProofError").textContent = "";
+  showScreen("screenSignProof");
+}
+
+function signProof() {
+  if (!pendingVerifiedClaim || !selectedAddress) return;
+  const btn = document.getElementById("signProofBtn");
+  const errEl = document.getElementById("signProofError");
+  btn.disabled = true;
+  btn.textContent = "Sign in MetaMask…";
+  errEl.style.display = "none";
+  errEl.textContent = "";
+  chrome.runtime.sendMessage(
+    { type: "SIGN_PROOF", address: selectedAddress, proofLabel: pendingVerifiedClaim.proofLabel },
+    (res) => {
+      btn.disabled = false;
+      btn.textContent = "Sign proof";
+      if (!res || !res.ok) {
+        errEl.textContent = res?.error || "Signing failed.";
+        errEl.style.display = "block";
+        return;
+      }
+      const sharedWith = pendingVerifiedClaim.origin ? [pendingVerifiedClaim.origin] : [];
       proofs.push({
         id: String(Date.now()),
-        claimType: proofLabel,
+        claimType: pendingVerifiedClaim.proofLabel,
         expiresAt: Date.now() + 24 * 60 * 60 * 1000,
         recentlySharedWith: sharedWith,
       });
       chrome.storage.local.set({ selective_disclosure_proofs: proofs });
+      if (pendingSiteRequest) {
+        pendingSiteRequest = null;
+        chrome.runtime.sendMessage({ type: "CLEAR_PENDING_SITE" });
+      }
+      pendingVerifiedClaim = null;
       renderProofs(proofs);
       showScreen("screenMain");
-    }
+    },
   );
 }
 
 // --- Init ---
 document.addEventListener("DOMContentLoaded", () => {
+  chrome.runtime.sendMessage({ type: "GET_PENDING_SITE" }, (res) => {
+    const pending = res && res.pending;
+    if (pending && pending.siteName && pending.requiredProof) {
+      pendingSiteRequest = pending;
+      showSiteRequest(pending.siteName, pending.requiredProof);
+    } else {
+      showScreen("screenMain");
+    }
+  });
+
   chrome.storage.local.get(["selective_disclosure_proofs"], (result) => {
     proofs = result.selective_disclosure_proofs || [];
     renderProofs(proofs);
   });
 
+  document.getElementById("siteRequestConnect").addEventListener("click", () => {
+    openAddStep1();
+  });
+
+  document.getElementById("siteRequestCancel").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "CLEAR_PENDING_SITE" });
+    pendingSiteRequest = null;
+    showScreen("screenMain");
+  });
+
   document.getElementById("addNewProof").addEventListener("click", openAddStep1);
+
+  document.getElementById("signProofBtn").addEventListener("click", signProof);
+  document.getElementById("signProofCancel").addEventListener("click", () => {
+    pendingVerifiedClaim = null;
+    showScreen("screenMain");
+  });
 
   document.getElementById("connectNewWallet").addEventListener("click", connectNewWallet);
   document.getElementById("backFromStep1").addEventListener("click", () => showScreen("screenMain"));

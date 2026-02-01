@@ -20,7 +20,18 @@
         e.stopPropagation();
         var modal = document.querySelector(".modal-overlay.open, [id='modalOverlay']");
         if (modal) modal.classList.remove("open");
-        chrome.runtime.sendMessage({ type: "OPEN_POPUP" });
+        var siteMeta = document.querySelector('meta[name="reveal-site-name"]');
+        var proofMeta = document.querySelector('meta[name="reveal-required-proof"]');
+        var siteName = (siteMeta && siteMeta.getAttribute("content")) || document.location.hostname || "This site";
+        var requiredProof = (proofMeta && proofMeta.getAttribute("content")) || "proof";
+        try {
+          if (!chrome.runtime?.id) return;
+          chrome.runtime.sendMessage({ type: "OPEN_POPUP", siteName: siteName, requiredProof: requiredProof }, function () {
+            if (chrome.runtime.lastError) void 0;
+          });
+        } catch (err) {
+          /* Extension context invalidated (e.g. extension reloaded) */
+        }
         return;
       }
       target = target.parentElement;

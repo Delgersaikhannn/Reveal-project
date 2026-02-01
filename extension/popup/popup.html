@@ -101,10 +101,26 @@
   </style>
 </head>
 <body>
+  <div id="screenSiteRequest" class="screen">
+    <h1 id="siteRequestTitle">Devfolio needs proof of ETH Chiang Mai POAP.</h1>
+    <p class="hint" id="siteRequestHint" style="margin-bottom: 12px;">Connect wallet to continue.</p>
+    <button class="btn btn-primary" id="siteRequestConnect">Connect wallet</button>
+    <button class="btn btn-secondary" id="siteRequestCancel" style="margin-top: 8px;">Cancel</button>
+  </div>
+
   <div id="screenMain" class="screen active">
     <h1>What do you want to prove?</h1>
     <ul class="proof-list" id="proofList"></ul>
     <div class="add-new" id="addNewProof">+ Add new proof</div>
+  </div>
+
+  <div id="screenSignProof" class="screen">
+    <h1>Verified</h1>
+    <p class="hint" id="signProofClaim" style="margin-bottom: 12px;">You have ETH Chiang Mai POAP.</p>
+    <p class="hint" id="signProofHint" style="margin-bottom: 12px;">Sign to generate proof that you can share with the site.</p>
+    <button class="btn btn-primary" id="signProofBtn">Sign proof</button>
+    <p class="error" id="signProofError" style="display: none; margin-top: 8px;"></p>
+    <button class="btn btn-secondary" id="signProofCancel" style="margin-top: 8px;">Cancel</button>
   </div>
 
   <div id="screenAddStep1" class="screen">
@@ -117,8 +133,14 @@
   </div>
 
   <div id="screenAddStep2" class="screen">
-    <h1>What to prove?</h1>
+    <h1 id="step2Title">What to prove?</h1>
     <p class="hint" id="selectedAddressLabel" style="margin-bottom: 12px;"></p>
+
+    <!-- Panel: Verifying (site request – hides choice) -->
+    <div id="step2PanelVerifying" class="step2-panel">
+      <p class="hint" id="step2VerifyingLabel">Verifying…</p>
+      <p class="hint" id="step2VerifyingMetaMask" style="margin-top: 8px; font-size: 11px; display: none;">Check MetaMask – approve the network switch to Sepolia if prompted.</p>
+    </div>
 
     <!-- Panel 1: Choose claim type -->
     <div id="step2PanelChoice" class="step2-panel active">
