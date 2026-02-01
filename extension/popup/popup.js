@@ -42,17 +42,33 @@ function renderProofs(proofs) {
       <div class="proof-detail" style="display: none;">
         <div class="proof-detail-row"><span class="proof-detail-label">TTL:</span> ${formatExpiresAt(proof.expiresAt)}</div>
         <div class="proof-detail-row"><span class="proof-detail-label">Recently shared with:</span></div>
-        <div class="proof-detail-row">${proof.recentlySharedWith?.length ? proof.recentlySharedWith.join(", ") : "None"}</div>
+        <div class="proof-detail-row">${proof.recentlySharedWith?.length ? proof.recentlySharedWith.join(", ") : "Not shared yet"}</div>
+        <button class="btn btn-primary proof-share-btn" type="button" style="margin-top: 10px;">Share with site</button>
       </div>
     `;
     const detailEl = li.querySelector(".proof-detail");
-    li.addEventListener("click", () => {
+    const shareBtn = li.querySelector(".proof-share-btn");
+    shareBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      shareProof(proof);
+    });
+    li.addEventListener("click", (e) => {
+      if (e.target.closest(".proof-share-btn")) return;
       const open = detailEl.style.display !== "none";
       detailEl.style.display = open ? "none" : "block";
       li.classList.toggle("expanded", !open);
     });
     list.appendChild(li);
   });
+}
+
+function shareProof(proof) {
+  chrome.runtime.sendMessage(
+    { type: "SHARE_PROOF", proof, origin: proof.recentlySharedWith?.[0] },
+    (res) => {
+      if (!res?.ok && res?.error) alert(res.error);
+    },
+  );
 }
 
 // --- Site request (opened from gated page) ---

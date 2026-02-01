@@ -126,6 +126,79 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "SHARE_PROOF") {
+    const { proof, origin } = message;
+    if (!proof) {
+      sendResponse({ ok: false, error: "No proof to share." });
+      return false;
+    }
+    function trySend(tab, done) {
+      if (!tab?.id || !tab.url || tab.url.startsWith("chrome-extension://")) {
+        done(false);
+        return;
+      }
+      chrome.tabs.sendMessage(tab.id, { type: "REVEAL_PROOF_RECEIVED", proof }, () => {
+        if (!chrome.runtime.lastError) {
+          done(true);
+          return;
+        }
+        chrome.scripting.executeScript(
+          {
+            target: { tabId: tab.id },
+            world: "MAIN",
+            func: (data) => {
+              document.dispatchEvent(new CustomEvent("reveal-proof-received", { detail: data }));
+            },
+            args: [proof],
+          },
+          () => {
+            const err = chrome.runtime.lastError;
+            done(!err);
+          },
+        );
+      });
+    }
+    chrome.tabs.query({}, (tabs) => {
+      const httpTabs = tabs.filter(
+        (t) => t.url && (t.url.startsWith("http://") || t.url.startsWith("https://"))
+      );
+      const byOrigin = origin
+        ? httpTabs.filter((t) => {
+            try {
+              const u = new URL(t.url);
+              const h = u.hostname;
+              const hp = u.port ? h + ":" + u.port : h;
+              return h === origin || hp === origin || (origin === "localhost" && h === "127.0.0.1") || (origin === "127.0.0.1" && h === "localhost");
+            } catch (_) {
+              return false;
+            }
+          })
+        : [];
+      const activeTab = httpTabs.find((t) => t.active);
+      const toTry = byOrigin.length ? byOrigin : activeTab ? [activeTab] : httpTabs.slice(0, 5);
+      let i = 0;
+      function next() {
+        if (i >= toTry.length) {
+          sendResponse({ ok: false, error: "Could not send proof. Keep the fake-gate page open, refresh it, then try again." });
+          return;
+        }
+        const tab = toTry[i];
+        chrome.tabs.update(tab.id, { active: true });
+        chrome.windows.update(tab.windowId, { focused: true });
+        trySend(tab, (ok) => {
+          if (ok) {
+            sendResponse({ ok: true });
+          } else {
+            i++;
+            next();
+          }
+        });
+      }
+      next();
+    });
+    return true;
+  }
+
   if (message.type === "SAVE_ADDRESS") {
     const { address } = message;
     if (!address) {

@@ -39,4 +39,16 @@
   }
 
   document.addEventListener("click", handleRevealClick, true);
+
+  chrome.runtime.onMessage.addListener(function (message, _sender, sendResponse) {
+    if (message.type === "REVEAL_PROOF_RECEIVED" && message.proof) {
+      try {
+        document.dispatchEvent(new CustomEvent("reveal-proof-received", { detail: message.proof }));
+        sendResponse({ ok: true });
+      } catch (e) {
+        sendResponse({ ok: false });
+      }
+    }
+    return true;
+  });
 })();
