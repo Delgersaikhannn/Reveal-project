@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
+import { InfiniteScrollPresentation } from "@/components/presentation";
 
 // Lazy load heavy components
 const LampContainer = dynamic(
@@ -39,7 +40,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black">
-      <Suspense fallback={<div className="w-full h-screen" />}>
+      <InfiniteScrollPresentation />
+      {/* <Suspense fallback={<div className="w-full h-screen" />}>
         <LampContainer className="h-screen">
           <motion.h1
             initial={{ opacity: 0.8, y: 20 }}
@@ -57,7 +59,7 @@ export default function Home() {
                 Privacy-First Protocol
               </span>
             </div>
-            {/* Main Headline */}
+
             <div className="text-6xl md:text-7xl font-bold tracking-tight">
               <span className="text-white">Prove only</span>
               <br />
@@ -82,7 +84,6 @@ export default function Home() {
               No history shared. No signatures stored on-chain.
             </p>
 
-            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8 w-full">
               <Link href="/create" className="inline-flex">
                 <HoverBorderGradient
@@ -98,31 +99,19 @@ export default function Home() {
                 <button className="h-[62px] px-6 py-2 text-white rounded-lg font-bold transform text-lg hover:-translate-y-1 transition duration-400">
                   Verify Proof
                 </button>
-                {/* <button className="relative inline-flex h-12 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50">
-                  <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-                  <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-8 py-1 text-lg font-medium text-white backdrop-blur-3xl">
-                    Verify Proof
-                  </span>
-                </button> */}
               </Link>
             </div>
           </motion.h1>
         </LampContainer>
       </Suspense>
-      {/* Subtle Grid Background */}
-      {/* <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" /> */}
 
       <div className="relative">
-        {/* Hero Section */}
-
-        {/* How It Works */}
         <div className="max-w-6xl mx-auto px-6 py-20">
           <h2 className="text-3xl font-bold text-white text-center mb-16">
             How It Works
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Step 1 */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all" />
               <div className="relative bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-8 hover:border-slate-700 transition-all">
@@ -139,7 +128,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Step 2 */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all" />
               <div className="relative bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-8 hover:border-slate-700 transition-all">
@@ -156,7 +144,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Step 3 */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all" />
               <div className="relative bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-8 hover:border-slate-700 transition-all">
@@ -175,7 +162,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Security Notes */}
         <div className="max-w-4xl mx-auto px-6 py-20">
           <div className="bg-slate-900/30 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-12">
             <div className="flex items-center gap-3 mb-8">
@@ -224,7 +210,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Trust Model */}
         <div className="max-w-4xl mx-auto px-6 py-20">
           <div className="text-center space-y-4 mb-12">
             <h2 className="text-3xl font-bold text-white">Trust Model</h2>
@@ -262,7 +247,7 @@ export default function Home() {
             </div>
           </Link>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
