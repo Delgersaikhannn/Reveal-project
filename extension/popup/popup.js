@@ -33,12 +33,17 @@ function showScreen(id) {
 function renderProofs(proofs) {
   const list = document.getElementById("proofList");
   list.innerHTML = "";
-  proofs.forEach((proof) => {
+  proofs.forEach((proof, index) => {
     const li = document.createElement("li");
     li.className = "proof-item";
     li.innerHTML = `
-      <div class="proof-type">${proof.claimType}</div>
-      <div class="proof-ttl">${formatTTL(proof.expiresAt)}</div>
+      <div class="proof-item-header">
+        <div class="proof-item-content">
+          <div class="proof-type">${proof.claimType}</div>
+          <div class="proof-ttl">${formatTTL(proof.expiresAt)}</div>
+        </div>
+        <button class="proof-delete-icon" type="button" title="Delete proof">×</button>
+      </div>
       <div class="proof-detail" style="display: none;">
         <div class="proof-detail-row"><span class="proof-detail-label">TTL:</span> ${formatExpiresAt(proof.expiresAt)}</div>
         <div class="proof-detail-row"><span class="proof-detail-label">Recently shared with:</span></div>
@@ -48,12 +53,17 @@ function renderProofs(proofs) {
     `;
     const detailEl = li.querySelector(".proof-detail");
     const shareBtn = li.querySelector(".proof-share-btn");
+    const deleteIcon = li.querySelector(".proof-delete-icon");
     shareBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       shareProof(proof);
     });
+    deleteIcon.addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteProof(index);
+    });
     li.addEventListener("click", (e) => {
-      if (e.target.closest(".proof-share-btn")) return;
+      if (e.target.closest(".proof-share-btn") || e.target.closest(".proof-delete-icon")) return;
       const open = detailEl.style.display !== "none";
       detailEl.style.display = open ? "none" : "block";
       li.classList.toggle("expanded", !open);
@@ -69,6 +79,12 @@ function shareProof(proof) {
       if (!res?.ok && res?.error) alert(res.error);
     },
   );
+}
+
+function deleteProof(index) {
+  proofs.splice(index, 1);
+  chrome.storage.local.set({ selective_disclosure_proofs: proofs });
+  renderProofs(proofs);
 }
 
 // --- Site request (opened from gated page) ---

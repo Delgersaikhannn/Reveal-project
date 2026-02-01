@@ -29,8 +29,37 @@
     }
     .proof-item:hover { background: #f3f4f6; }
     .proof-item.expanded { background: #f3f4f6; border-color: #d1d5db; }
+    .proof-item-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .proof-item-content {
+      flex: 1;
+    }
     .proof-type { font-size: 14px; font-weight: 500; color: #111827; }
     .proof-ttl { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .proof-delete-icon {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .proof-delete-icon:hover {
+      background: #fef2f2;
+      color: #dc2626;
+    }
     .proof-detail {
       margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;
       font-size: 12px; color: #4b5563;
