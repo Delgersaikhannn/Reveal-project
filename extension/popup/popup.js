@@ -147,9 +147,10 @@ const DAO_OPTIONS = [
   { id: "ens", name: "ENS", token: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", iconUrl: "https://ens.domains/favicon.ico", fallback: "E" },
 ];
 
-// NFT collections: Sepolia (user-provided contract 0x5867...)
+// NFT collections. POAP contract same on Ethereum/Gnosis; user must be on Gnosis (100) for POAP.
 const NFT_OPTIONS = [
-  { id: "sepolia-nft", name: "Sepolia NFT", nftContract: "0x5867eaF2a28034124bC05583EB6Ee20323e01EE3", iconUrl: null, fallback: "🖼" },
+  { id: "eth-chiangmai-poap", name: "ETH Chiang Mai POAP", nftContract: "0x22C1f6050E56d2876009903609a2cC3fEf83B415", chainId: 100, fallback: "🎫" },
+  { id: "sepolia-nft", name: "Sepolia NFT (test)", nftContract: "0xd5babab921a9167abbf7f093fd6969a86ea4eaa8", chainId: 11155111, fallback: "🖼" },
 ];
 
 // Token Holder asset options
@@ -188,6 +189,31 @@ function onDaoSelected(dao) {
   runVerify({ assetType: "erc20", tokenAddress: dao.token, proofLabel: `${dao.name} Member` });
 }
 
+function renderNftList() {
+  const list = document.getElementById("nftList");
+  list.innerHTML = "";
+  NFT_OPTIONS.forEach((nft) => {
+    const div = document.createElement("div");
+    div.className = "dao-option";
+    div.dataset.nftId = nft.id;
+    div.innerHTML = `
+      ${nft.iconUrl ? `<img class="dao-icon" src="${nft.iconUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span class="dao-icon-fallback" style="display: none;">${nft.fallback}</span>` : `<span class="dao-icon-fallback">${nft.fallback}</span>`}
+      <span>${nft.name}</span>
+    `;
+    div.addEventListener("click", () => onNftSelected(nft));
+    list.appendChild(div);
+  });
+}
+
+function onNftSelected(nft) {
+  runVerify({
+    assetType: "nft",
+    nftContractAddress: nft.nftContract,
+    chainId: nft.chainId,
+    proofLabel: `NFT Holder (${nft.name})`,
+  });
+}
+
 // --- Step 2: Token Holder ---
 function onAssetSelectChange() {
   const sel = document.getElementById("assetSelect");
@@ -212,7 +238,7 @@ function onVerifyToken() {
   runVerify({ assetType: opt.type, tokenAddress: opt.type === "erc20" ? tokenAddress : undefined, proofLabel: `Hold ${assetLabel}` });
 }
 
-function runVerify({ assetType, tokenAddress, nftContractAddress, proofLabel }) {
+function runVerify({ assetType, tokenAddress, nftContractAddress, chainId, proofLabel }) {
   const errEl = document.getElementById("step2Error");
   const hintEl = document.getElementById("step2Hint");
   errEl.style.display = "none";
@@ -228,7 +254,10 @@ function runVerify({ assetType, tokenAddress, nftContractAddress, proofLabel }) 
     assetLabel: proofLabel,
   };
   if (assetType === "erc20") payload.tokenAddress = tokenAddress;
-  if (assetType === "nft") payload.nftContractAddress = nftContractAddress;
+  if (assetType === "nft") {
+    payload.nftContractAddress = nftContractAddress;
+    if (chainId) payload.chainId = chainId;
+  }
 
   chrome.runtime.sendMessage(
     payload,

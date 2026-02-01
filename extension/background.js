@@ -15,10 +15,10 @@ const ERC20_CLAIM_MODULE = {
   verifySelector: "0x4a41d1ac",
 };
 
-// ERC721ClaimModule: verify(address user, bytes calldata data) where data = abi.decode(data, (address)) = NFT contract
-const ERC721_CLAIM_MODULE = {
-  address: "0x5867eaF2a28034124bC05583EB6Ee20323e01EE3",
-  verifySelector: "0x4a41d1ac",
+// ERC721ClaimModule per chain. Deploy to Gnosis (100) for POAP verification.
+const ERC721_CLAIM_MODULES = {
+  11155111: "0x5867eaF2a28034124bC05583EB6Ee20323e01EE3", // Sepolia
+  100: "0x0000000000000000000000000000000000000000", // Gnosis – deploy ERC721ClaimModule for POAP
 };
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -26,6 +26,17 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "OPEN_POPUP") {
+    chrome.action
+      .openPopup()
+      .then(() => sendResponse({ ok: true }))
+      .catch(() => {
+        chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html") });
+        sendResponse({ ok: true });
+      });
+    return true;
+  }
+
   if (message.type === "GET_SAVED_ADDRESSES") {
     chrome.storage.local.get([STORAGE_KEY_ADDRESSES], (result) => {
       const list = result[STORAGE_KEY_ADDRESSES] || [];
@@ -164,13 +175,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       if (assetType === "nft") {
         const nftContract = (nftContractAddress || "").trim();
+        const chainId = message.chainId ? parseInt(String(message.chainId), 10) : null;
         if (!nftContract || nftContract.length !== 42) {
           sendResponse({ ok: false, error: "Invalid NFT contract address." });
           return false;
         }
-        const moduleAddress = ERC721_CLAIM_MODULE.address;
+        const moduleAddress = (chainId && ERC721_CLAIM_MODULES[chainId]) || ERC721_CLAIM_MODULES[11155111];
         if (!moduleAddress || moduleAddress === "0x0000000000000000000000000000000000000000") {
-          sendResponse({ ok: false, error: "ERC721 module not configured. Deploy ERC721ClaimModule and set ERC721_CLAIM_MODULE.address." });
+          sendResponse({
+            ok: false,
+            error: chainId === 100
+              ? "ERC721 module not deployed on Gnosis. Deploy ERC721ClaimModule to Gnosis for POAP verification."
+              : "ERC721 module not configured.",
+          });
           return false;
         }
         const calldata = buildVerifyCalldataForNFT(address, nftContract);
@@ -182,8 +199,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           {
             target: { tabId: tab.id },
             world: "MAIN",
-            func: callContractInPage,
-            args: [moduleAddress, calldata],
+            func: chainId ? switchChainAndCallContractInPage : callContractInPage,
+            args: chainId ? [chainId, moduleAddress, calldata] : [moduleAddress, calldata],
           },
           (results) => {
             if (chrome.runtime.lastError) {
@@ -403,6 +420,39 @@ function buildAndCallVerifyInPage(contractAddress, userAddress, tokenAddress, mi
         const data = err?.data || err?.error?.data;
         const fullError = data ? `${msg} (revert data: ${data})` : msg;
         resolve({ error: fullError });
+      });
+  });
+}
+
+/**
+ * Runs in the page context. Switches to chainId, then calls contract. For POAP on Gnosis.
+ * args: [chainId, contractAddress, calldataHex].
+ */
+function switchChainAndCallContractInPage(chainId, contractAddress, calldataHex) {
+  return new Promise((resolve) => {
+    const w = typeof window !== "undefined" ? window : null;
+    if (!w || !w.ethereum) {
+      resolve({ error: "No wallet on this page." });
+      return;
+    }
+    const provider = Array.isArray(w.ethereum) ? w.ethereum[0] : w.ethereum;
+    if (!provider || typeof provider.request !== "function") {
+      resolve({ error: "Wallet not ready." });
+      return;
+    }
+    const chainIdHex = "0x" + parseInt(chainId, 10).toString(16);
+    provider
+      .request({ method: "wallet_switchEthereumChain", params: [{ chainId: chainIdHex }] })
+      .then(() => {
+        return callContractInPage(contractAddress, calldataHex);
+      })
+      .then((r) => resolve(r))
+      .catch((err) => {
+        if (err?.code === 4902) {
+          resolve({ error: "Please add Gnosis network to your wallet first." });
+        } else {
+          resolve({ error: err?.message || "Chain switch or call failed." });
+        }
       });
   });
 }
