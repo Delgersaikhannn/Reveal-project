@@ -83,7 +83,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "SIGN_PROOF") {
-    const { address, proofLabel } = message;
+    const { address, proofLabel, claimSignData } = message;
     if (!address || !proofLabel) {
       sendResponse({ ok: false, error: "Missing address or proof label." });
       return false;
@@ -109,8 +109,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ ok: false, error: "Keep the site that requested proof open and try again." });
           return;
         }
+        const args = [
+          address,
+          proofLabel,
+          claimSignData && typeof claimSignData === "object"
+            ? {
+                chainId: Number(claimSignData.chainId),
+                claimType: String(claimSignData.claimType || ""),
+                module: String(claimSignData.module || ""),
+                data: String(claimSignData.data || ""),
+              }
+            : null,
+        ];
         chrome.scripting.executeScript(
-          { target: { tabId: tab.id }, world: "MAIN", func: signProofInPage, args: [address, proofLabel] },
+          { target: { tabId: tab.id }, world: "MAIN", func: signProofInPage, args },
           (results) => {
             if (chrome.runtime.lastError) {
               sendResponse({ ok: false, error: chrome.runtime.lastError.message || "Could not sign." });
@@ -387,7 +399,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               sendResponse({ ok: false, error: r.error });
               return;
             }
-            sendResponse({ ok: true, verified: !!r?.verified, origin });
+            const chainIdRes = chainId || 11155111;
+            const nftHex = nftContract.replace(/^0x/, "").toLowerCase().padStart(64, "0");
+            const dataHex = "0x" + "0".repeat(24) + nftHex.slice(-40);
+            const claimSignData = {
+              chainId: chainIdRes,
+              claimType: "NFT_OWNERSHIP",
+              module: moduleAddress,
+              data: dataHex,
+            };
+            sendResponse({ ok: true, verified: !!r?.verified, origin, claimSignData });
           }
         );
         return;
@@ -447,11 +468,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return;
           }
           const r = results?.[0]?.result;
-          if (r?.error) {
-            sendResponse({ ok: false, error: r.error });
-            return;
-          }
-          sendResponse({ ok: true, verified: !!r?.verified, origin });
+            if (r?.error) {
+              sendResponse({ ok: false, error: r.error });
+              return;
+            }
+            const tokenHex = token.replace(/^0x/, "").toLowerCase().padStart(64, "0");
+            const minHex = BigInt(minWei).toString(16).padStart(64, "0");
+            const dataHex = "0x" + tokenHex + minHex;
+            const claimSignData = {
+              chainId: 11155111,
+              claimType: "DAO_MEMBERSHIP",
+              module: contractAddress,
+              data: dataHex,
+            };
+          sendResponse({ ok: true, verified: !!r?.verified, origin, claimSignData });
         }
       );
       });
@@ -694,10 +724,12 @@ function callContractInPage(contractAddress, calldataHex) {
 }
 
 /**
- * Runs in the page context (world: MAIN). Signs a proof message via personal_sign.
- * args: [address, proofLabel].
+ * Runs in the page context (world: MAIN). Signs a proof message.
+ * If claimSignData is provided, uses eth_signTypedData_v4 (EIP-712) for structured display in MetaMask.
+ * Otherwise falls back to personal_sign.
+ * args: [address, proofLabel, claimSignData?].
  */
-function signProofInPage(address, proofLabel) {
+function signProofInPage(address, proofLabel, claimSignData) {
   return new Promise((resolve) => {
     const w = typeof window !== "undefined" ? window : null;
     if (!w || !w.ethereum) {
@@ -709,12 +741,55 @@ function signProofInPage(address, proofLabel) {
       resolve({ error: "Wallet not ready." });
       return;
     }
-    const msg = `Proof: I hold ${proofLabel}.\nFor selective disclosure.\nTimestamp: ${Date.now()}`;
-    const hexMsg = "0x" + Array.from(new TextEncoder().encode(msg)).map((b) => b.toString(16).padStart(2, "0")).join("");
-    provider
-      .request({ method: "personal_sign", params: [hexMsg, address] })
-      .then(() => resolve({ ok: true }))
-      .catch((err) => resolve({ error: err?.message || "Signature rejected." }));
+    if (claimSignData && claimSignData.chainId && claimSignData.claimType && claimSignData.module && claimSignData.data) {
+      const timestamp = Math.floor(Date.now() / 1000);
+      const expiresAt = timestamp + 3600;
+      const nonceBytes = new Uint8Array(32);
+      if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+        crypto.getRandomValues(nonceBytes);
+      }
+      const nonceHex = "0x" + Array.from(nonceBytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const typedData = {
+        domain: {
+          name: "Reveal",
+          version: "1",
+          chainId: claimSignData.chainId,
+        },
+        types: {
+          Claim: [
+            { name: "ClaimType", type: "string" },
+            { name: "Module", type: "address" },
+            { name: "Data", type: "bytes" },
+            { name: "Timestamp", type: "uint256" },
+            { name: "ExpiresAt", type: "uint256" },
+            { name: "Nonce", type: "bytes32" },
+          ],
+        },
+        primaryType: "Claim",
+        message: {
+          ClaimType: claimSignData.claimType,
+          Module: claimSignData.module,
+          Data: claimSignData.data,
+          Timestamp: String(timestamp),
+          ExpiresAt: String(expiresAt),
+          Nonce: nonceHex,
+        },
+      };
+      provider
+        .request({
+          method: "eth_signTypedData_v4",
+          params: [address, JSON.stringify(typedData)],
+        })
+        .then(() => resolve({ ok: true }))
+        .catch((err) => resolve({ error: err?.message || "Signature rejected." }));
+    } else {
+      const msg = `Proof: I hold ${proofLabel}.\nFor selective disclosure.\nTimestamp: ${Date.now()}`;
+      const hexMsg = "0x" + Array.from(new TextEncoder().encode(msg)).map((b) => b.toString(16).padStart(2, "0")).join("");
+      provider
+        .request({ method: "personal_sign", params: [hexMsg, address] })
+        .then(() => resolve({ ok: true }))
+        .catch((err) => resolve({ error: err?.message || "Signature rejected." }));
+    }
   });
 }
 

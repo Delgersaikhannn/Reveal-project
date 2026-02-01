@@ -372,7 +372,7 @@ function runVerify({ assetType, tokenAddress, nftContractAddress, chainId, proof
         errEl.style.display = "block";
         return;
       }
-      pendingVerifiedClaim = { proofLabel, origin: res.origin };
+      pendingVerifiedClaim = { proofLabel, origin: res.origin, claimSignData: res.claimSignData };
       showSignProof(proofLabel);
     }
   );
@@ -404,7 +404,7 @@ function signProof() {
   errEl.style.display = "none";
   errEl.textContent = "";
   chrome.runtime.sendMessage(
-    { type: "SIGN_PROOF", address: selectedAddress, proofLabel: pendingVerifiedClaim.proofLabel },
+    { type: "SIGN_PROOF", address: selectedAddress, proofLabel: pendingVerifiedClaim.proofLabel, claimSignData: pendingVerifiedClaim.claimSignData },
     (res) => {
       btn.disabled = false;
       btn.textContent = "Sign proof";
