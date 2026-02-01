@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
 import Slide1 from "./slides/slide1";
 import Slide2 from "./slides/slide2";
@@ -14,7 +14,7 @@ interface Section {
   title: string;
   description: string;
   gradient: string;
-  content?: React.FC;
+  content?: React.FC<{ isActive: boolean }>;
 }
 
 const sections: Section[] = [
@@ -117,6 +117,20 @@ export default function InfiniteScrollPresentation() {
     goToSlide(prev);
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        nextSlide();
+      } else if (e.key === "ArrowLeft") {
+        prevSlide();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentSlide]); // Re-attach listener when currentSlide changes
+
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
       <div className="relative h-full ">
@@ -133,9 +147,9 @@ export default function InfiniteScrollPresentation() {
             }}
           >
             {" "}
-            <h2 className="text-5xl md:text-xl font-bold text-white absolute left-4 top-4">
+            {/* <h2 className="text-5xl md:text-xl font-bold text-white absolute left-4 top-4">
               {section.title}
-            </h2>
+            </h2> */}
             {section.content && <section.content />}
             {/* Background gradient effect */}
             {/* <div

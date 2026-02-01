@@ -25,7 +25,11 @@ const DEPLOYED_MODULES = {
 
 const SEPOLIA_CHAIN_ID = 11155111;
 
-const SlideDemo = () => {
+interface SlideDemoProps {
+  isActive: boolean;
+}
+
+const SlideDemo = ({ isActive }: SlideDemoProps) => {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { login, authenticated } = usePrivy();

@@ -1,7 +1,11 @@
 import { EncryptedText } from "@/components/ui/encrypted-text";
 import { Suspense } from "react";
 
-const Slide4 = () => {
+interface Slide4Props {
+  isActive: boolean;
+}
+
+const Slide4 = ({ isActive }: Slide4Props) => {
   return (
     <div className="font-bold tracking-tight h-full w-full flex flex-col items-center justify-center bg-black px-8 py-12 overflow-y-auto">
       {/* How it Works */}

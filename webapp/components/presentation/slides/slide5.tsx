@@ -1,7 +1,11 @@
 import { EncryptedText } from "@/components/ui/encrypted-text";
 import { Suspense } from "react";
 
-const Slide5 = () => {
+interface Slide5Props {
+  isActive: boolean;
+}
+
+const Slide5 = ({ isActive }: Slide5Props) => {
   return (
     <div className="font-bold tracking-tight h-full w-full flex flex-col items-center justify-center bg-black px-8 py-12 overflow-y-auto">
       {/* Commercial Potential */}

@@ -1,7 +1,11 @@
 import { EncryptedText } from "@/components/ui/encrypted-text";
 import { Suspense } from "react";
 
-const Slide1 = () => {
+interface Slide1Props {
+  isActive: boolean;
+}
+
+const Slide1 = ({ isActive }: Slide1Props) => {
   return (
     <div className="font-bold tracking-tight h-full w-full flex flex-col items-center justify-center bg-black">
       <img src="/assets/reveal_logo_web.png" className="w-56 z-10" />
