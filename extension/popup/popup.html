@@ -109,6 +109,22 @@
       color: #71717a;
       transition: border-color 0.15s, color 0.15s;
     }
+    #screenMain.active {
+      display: flex;
+      flex-direction: column;
+      min-height: 360px;
+    }
+    #screenMain.active .proof-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      margin-bottom: 0;
+    }
+    #screenMain.active .add-new {
+      margin-top: auto;
+      padding-top: 24px;
+      flex-shrink: 0;
+    }
     .add-new:hover {
       border-color: #52525b;
       color: #18181b;
@@ -244,6 +260,9 @@
     body.site-request-active {
       background: #0a0a0a;
       padding: 0;
+    }
+    body.site-request-active .screen:not(#screenSiteRequest) {
+      display: none !important;
     }
     body.site-request-active #screenSiteRequest {
       background: #0a0a0a;
