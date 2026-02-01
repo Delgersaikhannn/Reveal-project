@@ -346,6 +346,15 @@ function showSignProof(proofLabel) {
   document.getElementById("signProofHint").textContent = "Sign to generate proof that you can share with the site.";
   document.getElementById("signProofError").style.display = "none";
   document.getElementById("signProofError").textContent = "";
+  const imgWrap = document.getElementById("signProofImageWrap");
+  const img = document.getElementById("signProofImage");
+  if (proofLabel && /eth\s*chiang\s*mai|chiang\s*mai\s*poap/i.test(proofLabel)) {
+    img.src = chrome.runtime.getURL("assets/ethcmpoap.png");
+    img.alt = "ETH Chiang Mai POAP";
+    imgWrap.style.display = "block";
+  } else {
+    imgWrap.style.display = "none";
+  }
   showScreen("screenSignProof");
 }
 
