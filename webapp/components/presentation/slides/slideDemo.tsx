@@ -17,6 +17,29 @@ type ClaimType =
   | null;
 type TabType = "create" | "proof" | "verify";
 
+type ClaimVisualKey = Exclude<ClaimType, null>;
+
+const CLAIM_VISUALS: Record<
+  ClaimVisualKey,
+  { title: string; image: string; helper: string }
+> = {
+  NFT_OWNERSHIP: {
+    title: "NFT Ownership",
+    image: "/assets/nft_reveal.png",
+    helper: "Proves you hold the collection without exposing wallet contents.",
+  },
+  ERC20_MIN_BALANCE: {
+    title: "Token Balance",
+    image: "/assets/erc20_reveal.png",
+    helper: "Shows you meet a minimum ERC20 balance threshold only.",
+  },
+  WALLET_AGE_DAYS: {
+    title: "Wallet Age",
+    image: "/assets/dao_reveal.png",
+    helper: "Signals account tenure without revealing full history.",
+  },
+};
+
 const DEPLOYED_MODULES = {
   ERC721: "0x5867eaF2a28034124bC05583EB6Ee20323e01EE3",
   ERC20DAO: "0xAc93B403c21e9c2fdfFdD760e85efaFaf532Aedf",
@@ -50,6 +73,18 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
   const [proofInput, setProofInput] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
+
+  const activeVisual = (() => {
+    const type =
+      (generatedProof?.claim?.claimType as ClaimVisualKey | undefined) ||
+      (claimType as ClaimVisualKey | null);
+
+    if (type && CLAIM_VISUALS[type]) {
+      return CLAIM_VISUALS[type];
+    }
+
+    return null;
+  })();
 
   const handleGenerateProof = async () => {
     if (!authenticated || !isConnected || !address) {
@@ -231,11 +266,31 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
     }
   };
 
+  const shareProof = async () => {
+    if (!generatedProof) return;
+
+    const proofJson = JSON.stringify(generatedProof, null, 2);
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Reveal Proof",
+          text: `Claim: ${generatedProof.claim.claimType}\nProof JSON:\n${proofJson}`,
+        });
+      } else {
+        await navigator.clipboard.writeText(proofJson);
+        alert("Proof copied to clipboard");
+      }
+    } catch (error: any) {
+      alert(error.message || "Unable to share proof");
+    }
+  };
+
   return (
-    <div className="font-bold tracking-tight h-full w-full flex flex-col bg-black px-8 py-6 overflow-y-auto">
-      <div className="max-w-6xl mx-auto w-full">
+    <div className="font-bold tracking-tight h-full w-full flex flex-col items-center justify-center bg-black px-6 py-10 overflow-y-auto">
+      <div className="max-w-4xl w-full mx-auto">
         {/* Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           <h3 className="text-3xl font-bold text-white mb-2">Live Demo</h3>
           <p className="text-slate-400">
             Working extension. Smart contracts live on Sepolia.
@@ -290,7 +345,12 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
                       : "border-slate-700 hover:border-slate-600"
                   }`}
                 >
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-white flex flex-col items-center gap-2">
+                    <img
+                      src="/assets/nft_reveal.png"
+                      alt="NFT Ownership"
+                      className="h-40"
+                    />
                     NFT Ownership
                   </div>
                 </button>
@@ -302,7 +362,12 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
                       : "border-slate-700 hover:border-slate-600"
                   }`}
                 >
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-white flex flex-col items-center gap-2">
+                    <img
+                      src="/assets/erc20_reveal.png"
+                      alt="NFT Ownership"
+                      className="h-40"
+                    />
                     Token Balance
                   </div>
                 </button>
@@ -314,9 +379,18 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
                       : "border-slate-700 hover:border-slate-600"
                   }`}
                 >
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-white flex flex-col items-center gap-2">
+                    <img
+                      src="/assets/dao_reveal.png"
+                      alt="NFT Ownership"
+                      className="h-40"
+                    />
                     Wallet Age
                   </div>
+
+                  {/* <div className="text-sm font-semibold text-white">
+                    Wallet Age
+                  </div> */}
                 </button>
               </div>
 
@@ -349,6 +423,22 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
                 </>
               )}
 
+              {claimType === "WALLET_AGE_DAYS" && (
+                <div className="space-y-2">
+                  <input
+                    type="number"
+                    min={90}
+                    placeholder="Wallet age in days (min 90)"
+                    value={walletAgeDays}
+                    onChange={(e) => setWalletAgeDays(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+                  />
+                  <p className="text-xs text-slate-400">
+                    Must be at least 90 days old.
+                  </p>
+                </div>
+              )}
+
               {claimType && (
                 <button
                   onClick={handleGenerateProof}
@@ -367,20 +457,47 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
 
           {activeTab === "proof" && generatedProof && (
             <div className="space-y-4">
-              <div className="bg-slate-950/50 rounded-xl p-4 border border-emerald-500/30">
-                <div className="text-emerald-400 text-sm font-semibold mb-2">
-                  ✓ Proof Generated
-                </div>
-                <div className="text-xs text-slate-400">
-                  Claim: {generatedProof.claim.claimType}
+              <div className="bg-slate-950/50 rounded-xl p-4 border border-emerald-500/30 flex items-center gap-4">
+                {activeVisual && (
+                  <div className="shrink-0 w-28 h-28 rounded-xl overflow-hidden border border-slate-800 bg-slate-900">
+                    <img
+                      src={activeVisual.image}
+                      alt={activeVisual.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="text-emerald-400 text-sm font-semibold mb-1">
+                    ✓ Proof Generated
+                  </div>
+                  <div className="text-sm text-white font-semibold">
+                    {activeVisual?.title || generatedProof.claim.claimType}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    Claim: {generatedProof.claim.claimType}
+                  </div>
+                  {activeVisual?.helper && (
+                    <div className="text-xs text-slate-500 mt-2">
+                      {activeVisual.helper}
+                    </div>
+                  )}
                 </div>
               </div>
-              <button
-                onClick={copyProof}
-                className="w-full py-3 bg-cyan-500 rounded-xl font-semibold text-white"
-              >
-                Copy & Verify →
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={copyProof}
+                  className="w-full py-3 bg-cyan-500 rounded-xl font-semibold text-white"
+                >
+                  Copy & Verify →
+                </button>
+                <button
+                  onClick={shareProof}
+                  className="w-full py-3 bg-slate-800 rounded-xl font-semibold text-white border border-slate-700 hover:border-slate-500 transition-colors"
+                >
+                  Share Proof
+                </button>
+              </div>
             </div>
           )}
 
