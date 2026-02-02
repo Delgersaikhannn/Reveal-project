@@ -137,51 +137,33 @@ const Slide2 = ({ isActive }: Slide2Props) => {
             // }
             icon={
               <svg
-                className="w-6 h-6 text-rose-400"
-                fill="none"
-                viewBox="0 0 24 24"
                 stroke="currentColor"
+                fill="currentColor"
+                stroke-width="0"
+                viewBox="0 0 24 24"
+                className="w-6 h-6 text-[#f44336]"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
+                <path d="M7.5 7.25V9h11a2.5 2.5 0 0 1 2.5 2.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 19.5v-8A2.5 2.5 0 0 1 5.5 9H6V7.25C6 3.845 8.503 1 12 1c2.792 0 4.971 1.825 5.718 4.31a.75.75 0 1 1-1.436.432C15.71 3.84 14.079 2.5 12 2.5c-2.578 0-4.5 2.08-4.5 4.75Zm-3 4.25v8a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-13a1 1 0 0 0-1 1Z"></path>
               </svg>
             }
-            title=" All-or-Nothing"
-            description="Can't prove you own an NFT without exposing your entire
-                collection and wallet address."
+            title="Security Risks"
+            description="  Exposed holdings make you a target for phishing, scams, and
+                social engineering attacks."
           />
 
           <GridItem
             area="md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]"
             icon={
               <svg
-                className="w-6 h-6 text-rose-400"
-                fill="none"
-                viewBox="0 0 24 24"
                 stroke="currentColor"
+                fill="currentColor"
+                stroke-width="0"
+                viewBox="0 0 24 24"
+                className="w-6 h-6 text-[#f44336]"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
+                <path d="M11.46 1.137a1.748 1.748 0 0 1 1.08 0l8.25 2.675A1.75 1.75 0 0 1 22 5.476V10.5c0 6.19-3.77 10.705-9.401 12.83a1.704 1.704 0 0 1-1.198 0C5.771 21.204 2 16.69 2 10.5V5.476c0-.76.49-1.43 1.21-1.664Zm.617 1.426a.253.253 0 0 0-.154 0L3.673 5.24a.25.25 0 0 0-.173.237V10.5c0 5.461 3.28 9.483 8.43 11.426a.199.199 0 0 0 .14 0c5.15-1.943 8.43-5.965 8.43-11.426V5.476a.25.25 0 0 0-.173-.237ZM13 12.232V15a1 1 0 0 1-2 0v-2.768a2 2 0 1 1 2 0Z"></path>
               </svg>
             }
             // icon={<Lock className="h-4 w-4 text-black dark:text-neutral-400" />}
@@ -191,37 +173,28 @@ const Slide2 = ({ isActive }: Slide2Props) => {
           />
 
           <GridItem
-            area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]"
+            area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/3/13]"
             icon={
               <svg
-                className="w-6 h-6 text-rose-400"
-                fill="none"
-                viewBox="0 0 24 24"
                 stroke="currentColor"
+                fill="currentColor"
+                stroke-width="0"
+                viewBox="0 0 24 24"
+                className="w-6 h-6 text-[#f44336]"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
+                <path d="M22.266 2.711a.75.75 0 1 0-1.061-1.06l-1.983 1.983-1.984-1.983a.75.75 0 1 0-1.06 1.06l1.983 1.983-1.983 1.984a.75.75 0 0 0 1.06 1.06l1.984-1.983 1.983 1.983a.75.75 0 0 0 1.06-1.06l-1.983-1.984 1.984-1.983ZM4.75 1.5a3.25 3.25 0 0 1 .745 6.414A.827.827 0 0 1 5.5 8v8a.827.827 0 0 1-.005.086A3.25 3.25 0 0 1 4.75 22.5a3.25 3.25 0 0 1-.745-6.414A.827.827 0 0 1 4 16V8c0-.029.002-.057.005-.086A3.25 3.25 0 0 1 4.75 1.5ZM16 19.25a3.252 3.252 0 0 1 2.5-3.163V9.625a.75.75 0 0 1 1.5 0v6.462a3.252 3.252 0 0 1-.75 6.413A3.25 3.25 0 0 1 16 19.25ZM3 4.75a1.75 1.75 0 1 0 3.501-.001A1.75 1.75 0 0 0 3 4.75Zm0 14.5a1.75 1.75 0 1 0 3.501-.001A1.75 1.75 0 0 0 3 19.25Zm16.25-1.75a1.75 1.75 0 1 0 .001 3.501 1.75 1.75 0 0 0-.001-3.501Z"></path>
               </svg>
             }
             // icon={
             //   <Sparkles className="h-4 w-4 text-black dark:text-neutral-400" />
             // }
-            title="Security Risks"
-            description="  Exposed holdings make you a target for phishing, scams, and
-                social engineering attacks."
+            title=" All-or-Nothing"
+            description="Can't prove you own an NFT without exposing your entire
+                collection and wallet address."
           />
 
-          <GridItem
+          {/* <GridItem
             area="md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]"
             icon={
               <svg
@@ -244,13 +217,11 @@ const Slide2 = ({ isActive }: Slide2Props) => {
                 />
               </svg>
             }
-            // icon={
-            //   <Search className="h-4 w-4 text-black dark:text-neutral-400" />
-            // }
+           
             title="Security Risks"
             description="  Exposed holdings make you a target for phishing, scams, and
                 social engineering attacks."
-          />
+          /> */}
         </ul>
 
         {/* <div className="grid md:grid-cols-2 gap-6">
