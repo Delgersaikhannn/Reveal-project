@@ -61,9 +61,13 @@ const SlideDemo = ({ isActive }: SlideDemoProps) => {
 
   const [activeTab, setActiveTab] = useState<TabType>("create");
   const [claimType, setClaimType] = useState<ClaimType>(null);
-  const [nftAddress, setNftAddress] = useState("");
-  const [tokenAddress, setTokenAddress] = useState("");
-  const [minBalance, setMinBalance] = useState("");
+  const [nftAddress, setNftAddress] = useState(
+    "0xD5Babab921A9167ABBf7f093FD6969A86eA4EAa8",
+  );
+  const [tokenAddress, setTokenAddress] = useState(
+    "0xEFb6217Dd067c5C8e036286975ABF1D681bE2dfD",
+  );
+  const [minBalance, setMinBalance] = useState("100000");
   const [walletAgeDays, setWalletAgeDays] = useState("90");
   const [expiryMinutes, setExpiryMinutes] = useState("60");
   const [isGenerating, setIsGenerating] = useState(false);
